@@ -113,7 +113,7 @@ activityController.put("/update", async (req, res) => {
 });
 
 /************************
- UPDATE ACTIVITIY
+ DELETE ACTIVITIY
 ************************/
 activityController.delete("/removeActivity", async (req, res) => {
   const { activityId } = req.body;
