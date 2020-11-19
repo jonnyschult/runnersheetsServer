@@ -19,8 +19,6 @@ userController.post("/register", async (req, res) => {
     heightInInches,
     weightInPounds,
     age,
-    isPremium,
-    isCoach,
   } = req.body;
 
   try {
@@ -32,8 +30,6 @@ userController.post("/register", async (req, res) => {
       heightInInches: heightInInches,
       weightInPounds: weightInPounds,
       age: age,
-      isPremium: isPremium,
-      isCoach: isCoach,
     });
     let token = await jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
