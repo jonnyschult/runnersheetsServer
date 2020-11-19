@@ -19,8 +19,6 @@ userController.post("/register", async (req, res) => {
     heightInInches,
     weightInPounds,
     age,
-    isPremium,
-    isCoach,
   } = req.body;
 
   try {
