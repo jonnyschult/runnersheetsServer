@@ -30,8 +30,8 @@ userController.post("/register", async (req, res) => {
       heightInInches: heightInInches,
       weightInPounds: weightInPounds,
       age: age,
-      isPremium: isPremium,
-      isCoach: isCoach,
+      isCoach: false,
+      isPremium: false,
     });
     let token = await jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
@@ -47,7 +47,7 @@ userController.post("/register", async (req, res) => {
         message: "Account with that email already taken.",
       });
     } else {
-      res.send(500, err.message);
+      res.status(500).send({ err, message: "Server Error" });
     }
   }
 });
