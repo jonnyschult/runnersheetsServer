@@ -22,25 +22,31 @@ userController.post("/register", async (req, res) => {
   } = req.body;
 
   try {
-    const newUser = await User.create({
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-      passwordhash: bcrypt.hashSync(password, 10),
-      heightInInches: heightInInches,
-      weightInPounds: weightInPounds,
-      age: age,
-      isCoach: false,
-      isPremium: false,
-    });
-    let token = await jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
-    res.json({
-      user: newUser,
-      message: "User created",
-      loginToken: token,
-    });
+    if (password.length >= 8) {
+      const newUser = await User.create({
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        passwordhash: bcrypt.hashSync(password, 10),
+        heightInInches: heightInInches,
+        weightInPounds: weightInPounds,
+        age: age,
+        isCoach: false,
+        isPremium: false,
+      });
+      let token = await jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
+        expiresIn: "1d",
+      });
+      res.json({
+        user: newUser,
+        message: "User created",
+        loginToken: token,
+      });
+    } else {
+      res.status(406).json({
+        message: "Password must be equal to or more than 5 characters.",
+      });
+    }
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
       res.status(409).json({
