@@ -1,9 +1,9 @@
 const headers = (req, res, next) => {
-  res.header("access-control-allow-origin", "*");
-  res.header("access-control-allow-methods", "GET, POST, PUT, DELETE");
-  res.header("access-control-allow-headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  next();
+  return next();
 };
 
 module.exports = headers;
