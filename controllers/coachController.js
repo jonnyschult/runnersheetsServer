@@ -2,7 +2,7 @@ const { TeamRoster, User, Team } = require("../models");
 const { Router } = require("express");
 const sequelize = require("../db");
 const coachController = Router();
-const { UniqueConstraintError } = require("sequelize");
+const { UniqueConstraintError, Op } = require("sequelize");
 
 /***********************
     ADD TEAM MEMBER
@@ -75,6 +75,7 @@ coachController.get("/coachTeams/", async (req, res) => {
       //Map into an array athlete ids.
       return team.teamId;
     });
+    console.log(teamIds);
     const teams = await Team.findAll({
       //Use ids to find athletes in the user tables
       where: { id: teamIds },
