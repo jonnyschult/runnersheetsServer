@@ -40,12 +40,15 @@ coachController.get("/getAthletes/:id", async (req, res) => {
   const teamId = req.params.id;
   try {
     const teamInfo = await TeamRoster.findAll({
+      //Find all athletes on team by id
       where: { teamId: teamId, role: "athlete" },
     });
     const atheleteUserIds = teamInfo.map((athlete) => {
+      //Map into an array athlete ids.
       return athlete.userId;
     });
     const athleteInfo = await User.findAll({
+      //Use ids to find athletes in the user tables
       where: { id: atheleteUserIds },
     });
     res.status(200).json({
@@ -54,10 +57,37 @@ coachController.get("/getAthletes/:id", async (req, res) => {
       athleteInfo,
     });
   } catch (err) {
-    res.status(500).send({ error: "Server Error" });
+    res.status(500).send({ message: "Server Error" });
   }
 });
 
+/**************************
+    GET teams
+**************************/
+coachController.get("/coachTeams/", async (req, res) => {
+  const owner = req.user.id;
+  try {
+    const coachTeams = await TeamRoster.findAll({
+      //Find all teams associated with user on team by id
+      where: { userId: owner, role: { [Op.or]: ["manager", "coach"] } },
+    });
+    const teamIds = coachTeams.map((team) => {
+      //Map into an array athlete ids.
+      return team.teamId;
+    });
+    const teams = await Team.findAll({
+      //Use ids to find athletes in the user tables
+      where: { id: teamIds },
+    });
+    res.status(200).json({
+      message: "Success",
+      coachTeams,
+      teams,
+    });
+  } catch (err) {
+    res.status(500).send({ message: "Server Error" });
+  }
+});
 /**************************
     GET TEAM ACTIVITIES
 **************************/

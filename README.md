@@ -40,6 +40,7 @@ Controllers:
         Routes: ~/coach 
             POST /addAthlete		        => Add athlete to team (via TeamRoster through table)
             GET /getAtheletes		        => Get all athletes on a specific team
+            GET /coachTeams                      => Get all teams associated with a coach or manager
             GET /getTeamActivities/:id	    => Get all activities for all athletes on a team
             GET /getAthleteActivities/:id	=> Get all activities for a specific athlete
             DELETE/removeAthlete		    => Delete athlete from team
