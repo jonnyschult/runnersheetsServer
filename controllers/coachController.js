@@ -62,7 +62,7 @@ coachController.get("/getAthletes/:id", async (req, res) => {
 });
 
 /**************************
-    GET teams
+    GET TEAMS
 **************************/
 coachController.get("/coachTeams/", async (req, res) => {
   const owner = req.user.id;
