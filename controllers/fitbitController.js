@@ -19,7 +19,7 @@ fitbitController.get("/fitbitCS", async (req, res) => {
       redirectURI: "http://localhost:3000/athlete",
     });
   } catch (err) {
-    res.status(500).send({ err, message: "Server Error" });
+    res.status(500).json({ err, message: "Server Error" });
   }
 });
 

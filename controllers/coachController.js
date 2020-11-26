@@ -17,11 +17,11 @@ coachController.post("/addAthlete", async (req, res) => {
         teamId,
         userId: teammate.id,
       });
-      res.status(200).send({
+      res.status(200).json({
         message: `${teammate.firstName} was added to the team as an athlete.`,
       });
     } else {
-      res.status(403).send({ error: "Can't find that account." });
+      res.status(403).json({ message: "Can't find that account." });
     }
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
@@ -29,7 +29,7 @@ coachController.post("/addAthlete", async (req, res) => {
         message: `${teammateEmail} is already on the team`,
       });
     }
-    res.status(500).send({ error: "server error", err });
+    res.status(500).json({ message: "server error", err });
   }
 });
 
@@ -57,7 +57,7 @@ coachController.get("/getAthletes/:id", async (req, res) => {
       athleteInfo,
     });
   } catch (err) {
-    res.status(500).send({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -82,7 +82,7 @@ coachController.get("/getCoaches/:id", async (req, res) => {
       roles,
     });
   } catch (err) {
-    res.status(500).send({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -110,7 +110,7 @@ coachController.get("/coachTeams", async (req, res) => {
       teams,
     });
   } catch (err) {
-    res.status(500).send({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -165,7 +165,7 @@ coachController.get("/getAthleteActivities/:id", async (req, res) => {
       athleteActivities,
     });
   } catch (err) {
-    res.status(500).send({ error: "Server Error" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 

@@ -17,11 +17,11 @@ managerController.post("/addCoach", async (req, res) => {
         teamId,
         userId: teammate.id,
       });
-      res.status(200).send({
+      res.status(200).json({
         message: `${teammate.firstName} was added to the team as a ${role}.`,
       });
     } else {
-      res.status(403).send({ error: "Can't find that account." });
+      res.status(403).json({ error: "Can't find that account." });
     }
   } catch (err) {
     if (err instanceof UniqueConstraintError) {
@@ -55,7 +55,7 @@ managerController.put("/updateTeam", async (req, res) => {
         message: `The name '${teamName}' is already taken.`,
       });
     } else {
-      res.status(500).send({ error: "Server Error" });
+      res.status(500).json({ error: "Server Error" });
     }
   }
 });
@@ -84,7 +84,7 @@ managerController.put("/updateCoach", async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(500).send({ error: "Server Error" });
+    res.status(500).json({ error: "Server Error" });
   }
 });
 

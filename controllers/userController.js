@@ -53,7 +53,7 @@ userController.post("/register", async (req, res) => {
         message: "Account with that email already taken.",
       });
     } else {
-      res.status(500).send({ err, message: "Server Error" });
+      res.status(500).json({ err, message: "Server Error" });
     }
   }
 });
@@ -77,16 +77,16 @@ userController.post("/login", async (req, res) => {
               loginToken: token,
             });
           } else {
-            res.status(403).send({ message: "Wrong password" });
+            res.status(403).json({ message: "Wrong password" });
           }
         });
       } else {
-        res.status(404).send({ message: "No such user" });
+        res.status(404).json({ message: "No such user" });
       }
     });
   } catch (err) {
     (err) => {
-      res.status(500).send("server error");
+      res.status(500).json({ message: "server error" });
     };
   }
 });
@@ -148,12 +148,12 @@ userController.put("/updatePassword", userValidation, async (req, res) => {
             message: "Password successfully updated!",
           });
         } else {
-          res.status(403).send({ message: "Wrong password" });
+          res.status(403).json({ message: "Wrong password" });
         }
       });
     }
   } catch (err) {
-    res.status(500).send({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
@@ -173,12 +173,12 @@ userController.delete("/removeUser", userValidation, async (req, res) => {
             message: "Account removed",
           });
         } else {
-          res.status(403).send({ message: "Wrong password" });
+          res.status(403).json({ message: "Wrong password" });
         }
       });
     }
   } catch (err) {
-    res.status(500).send({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
