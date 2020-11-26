@@ -9,6 +9,7 @@ const {
   teamController,
   coachController,
   managerController,
+  fitbitController,
 } = require("./controllers");
 const {
   coachValidation,
@@ -30,6 +31,8 @@ app.use("/user", userController);
 /*********************
     AUTHORIZED ROUTES
 *********************/
+
+app.use("/fitbit", userValidation, fitbitController);
 
 app.use("/activity", userValidation, activityController);
 
