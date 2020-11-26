@@ -38,30 +38,6 @@ managerController.post("/addCoach", async (req, res) => {
 });
 
 /**************************
-    GET COACHES
-**************************/
-managerController.get("/getCoaches/:id", async (req, res) => {
-  const teamId = req.params.id;
-  try {
-    const teamCoaches = await TeamRoster.findAll({
-      where: { teamId: teamId, role: { [Op.or]: ["manager", "coach"] } },
-    });
-    const coaches = teamCoaches.map((athlete) => {
-      return athlete.userId;
-    });
-    const coachInfo = await User.findAll({
-      where: { id: coaches },
-    });
-    res.status(200).json({
-      message: "Success",
-      coachInfo,
-    });
-  } catch (err) {
-    res.status(500).send({ error: "Server Error" });
-  }
-});
-
-/**************************
     UPDATE TEAM NAME
 **************************/
 managerController.put("/updateTeam", async (req, res) => {
@@ -74,7 +50,13 @@ managerController.put("/updateTeam", async (req, res) => {
       updatedTeam,
     });
   } catch (err) {
-    res.status(500).send({ error: "Server Error" });
+    if (err instanceof UniqueConstraintError) {
+      res.status(409).json({
+        message: `The name '${teamName}' is already taken.`,
+      });
+    } else {
+      res.status(500).send({ error: "Server Error" });
+    }
   }
 });
 
@@ -84,14 +66,23 @@ managerController.put("/updateTeam", async (req, res) => {
 managerController.put("/updateCoach", async (req, res) => {
   const { userId, teamId, newRole } = req.body;
   try {
-    const teamMember = await TeamRoster.findOne({
-      where: { userId: userId, teamId: teamId },
+    const roleCount = await TeamRoster.findAll({
+      where: { teamId, role: "manager" },
     });
-    const updatedTeamMember = await teamMember.update({ role: newRole });
-    res.status(200).json({
-      message: "Role Updated",
-      updatedTeamMember,
-    });
+    if (roleCount.length && newRole === "coach") {
+      res
+        .status(405)
+        .json({ message: "Must have atleast one manager on a team" });
+    } else {
+      const teamMember = await TeamRoster.findOne({
+        where: { userId: userId, teamId: teamId },
+      });
+      const updatedTeamMember = await teamMember.update({ role: newRole });
+      res.status(200).json({
+        message: "Role Updated",
+        updatedTeamMember,
+      });
+    }
   } catch (err) {
     res.status(500).send({ error: "Server Error" });
   }

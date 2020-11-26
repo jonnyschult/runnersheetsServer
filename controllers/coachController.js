@@ -1,11 +1,11 @@
-const { TeamRoster, User, Team } = require("../models");
+const { TeamRoster, User, Team, Activity } = require("../models");
 const { Router } = require("express");
 const sequelize = require("../db");
 const coachController = Router();
 const { UniqueConstraintError, Op } = require("sequelize");
 
 /***********************
-    ADD TEAM MEMBER
+    ADD TEAM ATHLETE
 ***********************/
 coachController.post("/addAthlete", async (req, res) => {
   const { teammateEmail, teamId } = req.body;
@@ -62,38 +62,65 @@ coachController.get("/getAthletes/:id", async (req, res) => {
 });
 
 /**************************
+    GET COACHES
+**************************/
+coachController.get("/getCoaches/:id", async (req, res) => {
+  const teamId = req.params.id;
+  try {
+    const roles = await TeamRoster.findAll({
+      where: { teamId: teamId, role: { [Op.or]: ["manager", "coach"] } },
+    });
+    const coachesId = roles.map((athlete) => {
+      return athlete.userId;
+    });
+    const coaches = await User.findAll({
+      where: { id: coachesId },
+    });
+    res.status(200).json({
+      message: "Success",
+      coaches,
+      roles,
+    });
+  } catch (err) {
+    res.status(500).send({ message: "Server Error" });
+  }
+});
+
+/**************************
     GET TEAMS
 **************************/
-coachController.get("/coachTeams/", async (req, res) => {
+coachController.get("/coachTeams", async (req, res) => {
   const owner = req.user.id;
   try {
-    const coachTeams = await TeamRoster.findAll({
+    const coachRole = await TeamRoster.findAll({
       //Find all teams associated with user on team by id
       where: { userId: owner, role: { [Op.or]: ["manager", "coach"] } },
     });
-    const teamIds = coachTeams.map((team) => {
+    const teamIds = coachRole.map((team) => {
       //Map into an array athlete ids.
       return team.teamId;
     });
-    console.log(teamIds);
     const teams = await Team.findAll({
       //Use ids to find athletes in the user tables
       where: { id: teamIds },
     });
     res.status(200).json({
       message: "Success",
-      coachTeams,
+      coachRole,
       teams,
     });
   } catch (err) {
     res.status(500).send({ message: "Server Error" });
   }
 });
+
 /**************************
     GET TEAM ACTIVITIES
 **************************/
 coachController.get("/getTeamActivities/:id", async (req, res) => {
   const teamId = req.params.id;
+  const startDate = req.query.startDate;
+  const endDate = req.query.endDate;
   try {
     const teamInfo = await TeamRoster.findAll({
       //Finds all team athletes
@@ -106,7 +133,12 @@ coachController.get("/getTeamActivities/:id", async (req, res) => {
     const teamActivities = await User.findAll({
       //Finds all athletes' activities using the ids from the map method above.
       where: { id: atheleteUserIds },
-      include: "activities",
+      include: [
+        {
+          model: Activity,
+          where: { date: { [Op.between]: [startDate, endDate] } },
+        },
+      ],
     });
     res.status(200).json({
       message: "Success",
@@ -114,7 +146,7 @@ coachController.get("/getTeamActivities/:id", async (req, res) => {
       teamActivities,
     });
   } catch (err) {
-    res.status(500).send({ error: "Server Error" });
+    res.status(500).json({ message: "Server Error", err });
   }
 });
 
@@ -134,6 +166,32 @@ coachController.get("/getAthleteActivities/:id", async (req, res) => {
     });
   } catch (err) {
     res.status(500).send({ error: "Server Error" });
+  }
+});
+
+/**************************
+    UPDATE ATHLETE INFO
+**************************/
+coachController.put("/updateAthlete", async (req, res) => {
+  const { owner, heightInInches, weightInPounds, age } = req.body;
+
+  try {
+    const account = await User.findOne({ where: { id: owner } });
+    if (account) {
+      const newInfo = await account.update({
+        heightInInches,
+        weightInPounds,
+        age,
+      });
+      res.status(200).json({
+        message: "Account Updated!",
+        newInfo,
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", err });
   }
 });
 

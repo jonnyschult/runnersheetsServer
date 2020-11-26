@@ -40,18 +40,19 @@ Controllers:
         Routes: ~/coach 
             POST /addAthlete		        => Add athlete to team (via TeamRoster through table)
             GET /getAtheletes		        => Get all athletes on a specific team
-            GET /coachTeams                      => Get all teams associated with a coach or manager
-            GET /getTeamActivities/:id	    => Get all activities for all athletes on a team
+            GET /getCoaches/:id             => Get all coaches and their roles for a specific team
+            GET /coachTeams                 => Get all teams associated with a coach or manager
+            GET /getTeamActivities/:id	    => Get all activities for all athletes on a team (+accept query string for date)
             GET /getAthleteActivities/:id	=> Get all activities for a specific athlete
+            PUT /updateAthlete              => Update athlete info (weight, height, age)
             DELETE/removeAthlete		    => Delete athlete from team
     5. managerController***: 
         Use: Enables users with the manager role to add coaches and managers to their team, update coach/manager roles, delete coaches and managers, and remove team.
         Routes: ~/manager
             Managers: ~/manager ***			
             POST /addCoach			        => Add coach or manager to team
-            GET /getAtheletes/:id		    => Get all coaches/managers for a team
             PUT /updateTeam			        => Update team name
-            PUT /updateCoach		        => Update role of coach or manager
+            PUT /updateCoach		        => Update role of coach or manager (require atleast one manager to be on team)
             DELETE /removeCoach		        => Delete coach or manager from team
             DELETE /removeTeam		        => Delete team 
 Models: 

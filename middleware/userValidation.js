@@ -20,11 +20,11 @@ const validation = (req, res, next) => {
               next();
             },
             (err) => {
-              res.status(401).send({ error: "No user found with token" });
+              res.status(401).json({ message: "No user found with token" });
             }
           );
         } else {
-          res.status(400).send({ error: "Bad Request" });
+          res.status(400).json({ message: "Bad Request", err });
         }
       });
     }

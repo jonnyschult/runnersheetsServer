@@ -2,7 +2,6 @@ const { Team, TeamRoster } = require("../models");
 const sequelize = require("../db");
 const jwt = require("jsonwebtoken");
 const { Router } = require("express");
-const { UniqueConstraintError } = require("sequelize");
 
 const teamController = Router();
 
@@ -32,11 +31,12 @@ teamController.post("/create", async (req, res, next) => {
       res.status(409).json({
         message: `The name '${teamName}' is already taken.`,
       });
+    } else {
+      res.status(500).json({
+        result: err,
+        message: "Server Error",
+      });
     }
-    res.status(500).json({
-      result: err,
-      message: "Server Error",
-    });
   }
 });
 
