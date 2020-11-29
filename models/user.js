@@ -40,6 +40,10 @@ const User = sequelize.define("user", {
     type: DataTypes.BOOLEAN,
     allowNull: false,
   },
+  fitbitRefresh: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 module.exports = User;
