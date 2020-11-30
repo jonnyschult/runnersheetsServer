@@ -16,7 +16,9 @@ activityController.post("/create", async (req, res) => {
     avgHR,
     maxHR,
     description,
-    strava_id,
+    stravaId,
+    garminId,
+    fitbitId,
   } = req.body;
   const owner = req.user.id;
 
@@ -29,7 +31,9 @@ activityController.post("/create", async (req, res) => {
       avgHR,
       maxHR,
       description,
-      strava_id,
+      stravaId,
+      garminId,
+      fitbitId,
       userId: owner,
     });
     res.status(200).json({
@@ -47,8 +51,8 @@ activityController.post("/create", async (req, res) => {
 /************************
  GET ACTIVITIES
 ************************/
-activityController.get("/getActivities/:id", async (req, res) => {
-  const owner = req.params.id;
+activityController.get("/getActivities", async (req, res) => {
+  const owner = req.user.id;
   try {
     const atheleteActivities = await Activity.findAll({
       where: { userId: owner },
@@ -116,12 +120,23 @@ activityController.put("/update", async (req, res) => {
  DELETE ACTIVITIY
 ************************/
 activityController.delete("/removeActivity", async (req, res) => {
-  const { activityId } = req.body;
+  const { activityId, fitbitId } = req.body;
   const owner = req.user.id;
   try {
-    await Activity.destroy({ where: { id: activityId, userId: owner } });
+    if (activityId) {
+      await Activity.destroy({
+        where: { id: activityId, userId: owner },
+      });
+    } else if (fitbitId) {
+      await Activity.destroy({
+        where: { fitbitId: fitbitId, userId: owner },
+      });
+    } else {
+      throw new Error();
+    }
     res.status(200).json({ message: "Activity Deleted" });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Server Error" });
   }
 });

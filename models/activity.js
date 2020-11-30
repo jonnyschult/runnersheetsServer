@@ -7,15 +7,15 @@ const Activity = sequelize.define("activity", {
     allowNull: false,
   },
   meters: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: false,
   },
   durationSecs: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: false,
   },
   elevationMeters: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.FLOAT,
     allowNull: true,
   },
   avgHR: {
@@ -30,8 +30,16 @@ const Activity = sequelize.define("activity", {
     type: DataTypes.TEXT,
     allowNull: true,
   },
-  strava_id: {
+  stravaId: {
     type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  garminId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  fitbitId: {
+    type: DataTypes.BIGINT,
     allowNull: true,
   },
 });
