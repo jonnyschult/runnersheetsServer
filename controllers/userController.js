@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { User } = require("../models/");
+const { User, Team } = require("../models/");
 const sequelize = require("../db");
 const { Router } = require("express");
 const bcrypt = require("bcrypt");
@@ -100,8 +100,12 @@ userController.get("/getAthlete", userValidation, async (req, res) => {
   try {
     const athlete = await User.findOne({
       where: { id: athleteId },
+      include: [
+        {
+          model: Team,
+        },
+      ],
     });
-    console.log(athlete);
     if (athlete) {
       res.status(200).json({
         message: "Success",
