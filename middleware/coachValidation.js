@@ -1,17 +1,18 @@
 const { TeamRoster } = require("../models");
+const { Op } = require("sequelize");
 
 const coachValidation = async (req, res, next) => {
   try {
     if (req.method == "OPTIONS") {
       next();
     } else {
-      const teamMember = await TeamRoster.findOne({
-        where: { userId: req.user.id },
+      const teamRole = await TeamRoster.findOne({
+        where: { userId: req.user.id, role: { [Op.or]: ["coach", "manager"] } },
       });
-      if (teamMember.role === "coach" || teamMember.role === "manager") {
+      if (teamRole) {
         next();
       } else {
-        res.status(401).send({
+        res.status(401).json({
           message: "Must be a coach or a manager to perform this action.",
         });
       }

@@ -3,7 +3,7 @@ const sequelize = require("../db");
 
 const Activity = sequelize.define("activity", {
   date: {
-    type: DataTypes.DATE,
+    type: DataTypes.BIGINT,
     allowNull: false,
   },
   meters: {

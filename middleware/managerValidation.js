@@ -5,15 +5,15 @@ const managerValidation = async (req, res, next) => {
     if (req.method == "OPTIONS") {
       next();
     } else {
-      const teamMember = await TeamRoster.findOne({
-        where: { userId: req.user.id },
+      const teamRole = await TeamRoster.findOne({
+        where: { userId: req.user.id, role: "manager" },
       });
-      if (teamMember.role === "manager") {
+      if (teamRole) {
         next();
       } else {
         res
           .status(401)
-          .send({ message: "Must be a manager to perform this action." });
+          .json({ message: "Must be a manager to perform this action." });
       }
     }
   } catch (err) {
