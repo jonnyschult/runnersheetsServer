@@ -41,10 +41,8 @@ activityController.post("/create", async (req, res) => {
       message: "Activity saved.",
     });
   } catch (err) {
-    res.status(500).json({
-      result: err,
-      message: "Server error. Activity not saved.",
-    });
+    console.log(err);
+    res.status(500).json({ err });
   }
 });
 

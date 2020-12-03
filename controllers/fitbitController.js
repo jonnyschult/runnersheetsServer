@@ -12,7 +12,7 @@ fitbitController.get("/getAuth", async (req, res) => {
     res.status(200).json({
       message: "success",
       clientId: process.env.FITBIT_CLIENT_ID,
-      redirectURI: "http://localhost:3000/fitbit",
+      redirectURI: process.env.FITBIT_CALLBACK,
     });
   } catch (err) {
     res.status(500).json({ err, message: "Server Error" });
