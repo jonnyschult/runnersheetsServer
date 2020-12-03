@@ -4,6 +4,7 @@ const sequelize = require("../db");
 const { Router } = require("express");
 
 const fitbitController = Router();
+//TODO Redundant: Move to one route and return all info.
 /***************************
  * GET CLIENT_ID AND CALLBACK URI FOR AUTHFLOW WITH FITBIT
  ***************************/
@@ -27,6 +28,7 @@ fitbitController.get("/getSecretId", async (req, res) => {
     res.status(200).json({
       message: "success",
       authorization: process.env.FITBIT_BASE64,
+      redirectURI: process.env.FITBIT_CALLBACK,
     });
   } catch (err) {
     res.status(500).json({ err, message: "Server Error" });
