@@ -69,7 +69,8 @@ managerController.put("/updateCoach", async (req, res) => {
     const roleCount = await TeamRoster.findAll({
       where: { teamId, role: "manager" },
     });
-    if (roleCount.length && newRole === "coach") {
+    if (roleCount.length === 1 && newRole === "coach") {
+      //Requires at least one manager be on the team
       res
         .status(405)
         .json({ message: "Must have atleast one manager on a team" });
