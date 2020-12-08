@@ -1,6 +1,7 @@
 const { Activity } = require("../models");
 const { Router } = require("express");
 const sequelize = require("../db");
+const { Op } = require("sequelize");
 
 const activityController = Router();
 
@@ -47,13 +48,36 @@ activityController.post("/create", async (req, res) => {
 });
 
 /************************
- GET ACTIVITIES
+ GET ALL ACTIVITIES
 ************************/
 activityController.get("/getActivities", async (req, res) => {
   const owner = req.user.id;
   try {
     const atheleteActivities = await Activity.findAll({
       where: { userId: owner },
+    });
+    if (atheleteActivities) {
+      res
+        .status(200)
+        .json({ message: "Activities retrieved", result: atheleteActivities });
+    } else {
+      res.status(404).json({ message: "Activities not found." });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Server Error." });
+  }
+});
+
+/************************
+ GET ACTIVITIES BY DATE
+************************/
+activityController.get("/getActivitiesDate", async (req, res) => {
+  const owner = req.user.id;
+  const startDate = req.query.startDate;
+  const endDate = req.query.endDate;
+  try {
+    const atheleteActivities = await Activity.findAll({
+      where: { userId: owner, date: { [Op.between]: [startDate, endDate] } },
     });
     if (atheleteActivities) {
       res
