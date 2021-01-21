@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { User, Team } = require("../models/");
+const { User, Team, Club } = require("../models/");
 const sequelize = require("../db");
 const { Router } = require("express");
 const bcrypt = require("bcrypt");
@@ -103,6 +103,9 @@ userController.get("/getAthlete", userValidation, async (req, res) => {
       include: [
         {
           model: Team,
+        },
+        {
+          model: Club,
         },
       ],
     });

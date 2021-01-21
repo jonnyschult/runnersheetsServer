@@ -10,14 +10,19 @@ const {
   coachController,
   managerController,
   fitbitController,
+  chairpersonController,
+  viceChairController
 } = require("./controllers");
 const {
   coachValidation,
   managerValidation,
   userValidation,
   headers,
+  chairpersonValidation,
+  viceChairValidation
 } = require("./middleware");
-const { Team, User, TeamRoster, Activity } = require("./models");
+const { Club, ClubRoster, Team, User, TeamRoster, Activity } = require("./models");
+const clubController = require("./controllers/clubController");
 
 app.use(express.json());
 app.use(headers);
@@ -38,9 +43,15 @@ app.use("/activity", userValidation, activityController);
 
 app.use("/team", userValidation, teamController);
 
+app.use("/club", userValidation, clubController);
+
 app.use("/coach", userValidation, coachValidation, coachController);
 
 app.use("/manager", userValidation, managerValidation, managerController);
+
+app.use("/viceChair", userValidation, viceChairValidation, viceChairController);
+
+app.use("/chairperson", userValidation, chairpersonValidation, chairpersonController);
 
 /*********************
     DB CONNECTION
@@ -61,8 +72,14 @@ Team.belongsToMany(User, {
   onDelete: "cascade",
 });
 User.belongsToMany(Team, { through: TeamRoster });
+Club.belongsToMany(User, {
+  through: ClubRoster,
+  onDelete: "cascade",
+});
+User.belongsToMany(Club, { through: ClubRoster });
 User.hasMany(Activity);
 
 app.listen(process.env.PORT, () => {
   console.log(`app is listening on port ${process.env.PORT}`);
 });
+ 

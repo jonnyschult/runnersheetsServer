@@ -1,6 +1,8 @@
 const User = require("./user");
 const Team = require("./team");
 const TeamRoster = require("./teamRosters");
+const Club = require('./club');
+const ClubRoster = require('./clubRoster')
 const Activity = require("./activity");
 
 module.exports = {
@@ -8,4 +10,6 @@ module.exports = {
   Activity,
   Team,
   TeamRoster,
+  Club,
+  ClubRoster
 };

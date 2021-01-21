@@ -4,6 +4,8 @@ const teamController = require("./teamController");
 const coachController = require("./coachController");
 const managerController = require("./managerController");
 const fitbitController = require("./fitbitController");
+const viceChairController = require('./viceChairController')
+const chairpersonController = require('./chairpersonController')
 
 module.exports = {
   userController,
@@ -12,4 +14,6 @@ module.exports = {
   coachController,
   managerController,
   fitbitController,
+  viceChairController,
+  chairpersonController
 };
