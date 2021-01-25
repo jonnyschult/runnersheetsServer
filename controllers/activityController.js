@@ -131,6 +131,7 @@ activityController.put("/update", async (req, res) => {
       });
     }
   } catch (err) {
+    console.log(err)
     res.status(500).json({
       result: err,
       message: "Server error. Activity not updated.",

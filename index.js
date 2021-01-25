@@ -11,7 +11,7 @@ const {
   managerController,
   fitbitController,
   chairpersonController,
-  viceChairController
+  viceChairController,
 } = require("./controllers");
 const {
   coachValidation,
@@ -19,9 +19,16 @@ const {
   userValidation,
   headers,
   chairpersonValidation,
-  viceChairValidation
+  viceChairValidation,
 } = require("./middleware");
-const { Club, ClubRoster, Team, User, TeamRoster, Activity } = require("./models");
+const {
+  Club,
+  ClubRoster,
+  Team,
+  User,
+  TeamRoster,
+  Activity,
+} = require("./models");
 const clubController = require("./controllers/clubController");
 
 app.use(express.json());
@@ -51,7 +58,12 @@ app.use("/manager", userValidation, managerValidation, managerController);
 
 app.use("/viceChair", userValidation, viceChairValidation, viceChairController);
 
-app.use("/chairperson", userValidation, chairpersonValidation, chairpersonController);
+app.use(
+  "/chairperson",
+  userValidation,
+  chairpersonValidation,
+  chairpersonController
+);
 
 /*********************
     DB CONNECTION
@@ -61,7 +73,7 @@ sequelize
   .authenticate()
   .then(() => {
     console.log("Connected");
-    sequelize.sync();
+    sequelize.sync({ force: true });
   })
   .catch((err) => {
     console.error("Unable to connect to the DB", err);
@@ -82,4 +94,3 @@ User.hasMany(Activity);
 app.listen(process.env.PORT, () => {
   console.log(`app is listening on port ${process.env.PORT}`);
 });
- 

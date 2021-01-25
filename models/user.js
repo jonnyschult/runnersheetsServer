@@ -28,8 +28,8 @@ const User = sequelize.define("user", {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
-  age: {
-    type: DataTypes.INTEGER,
+  DOB: {
+    type: DataTypes.DATEONLY,
     allowNull: true,
   },
   isPremium: {
