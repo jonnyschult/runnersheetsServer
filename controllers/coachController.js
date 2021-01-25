@@ -173,7 +173,7 @@ coachController.get("/getAthleteActivities/:id", async (req, res) => {
     UPDATE ATHLETE INFO
 **************************/
 coachController.put("/updateAthlete", async (req, res) => {
-  const { owner, heightInInches, weightInPounds, age } = req.body;
+  const { owner, heightInInches, weightInPounds, DOB } = req.body;
 
   try {
     const account = await User.findOne({ where: { id: owner } });
@@ -181,7 +181,7 @@ coachController.put("/updateAthlete", async (req, res) => {
       const newInfo = await account.update({
         heightInInches,
         weightInPounds,
-        age,
+        DOB,
       });
       res.status(200).json({
         message: "Account Updated!",

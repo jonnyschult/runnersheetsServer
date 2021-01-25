@@ -73,7 +73,7 @@ sequelize
   .authenticate()
   .then(() => {
     console.log("Connected");
-    sequelize.sync({ force: true });
+    sequelize.sync();
   })
   .catch((err) => {
     console.error("Unable to connect to the DB", err);

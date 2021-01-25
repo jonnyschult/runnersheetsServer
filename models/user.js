@@ -29,8 +29,8 @@ const User = sequelize.define("user", {
     allowNull: true,
   },
   DOB: {
-    type: DataTypes.DATEONLY,
-    allowNull: true,
+    type: DataTypes.DATE,
+    allowNull: false,
   },
   isPremium: {
     type: DataTypes.BOOLEAN,

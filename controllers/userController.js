@@ -19,7 +19,7 @@ userController.post("/register", async (req, res) => {
     password,
     heightInInches,
     weightInPounds,
-    age,
+    DOB,
   } = req.body;
 
   try {
@@ -31,7 +31,7 @@ userController.post("/register", async (req, res) => {
         passwordhash: bcrypt.hashSync(password, 10),
         heightInInches: heightInInches,
         weightInPounds: weightInPounds,
-        age: age,
+        DOB: DOB,
         isCoach: false,
         isPremium: false,
       });
@@ -133,7 +133,7 @@ userController.put("/updateUser", userValidation, async (req, res) => {
     lastName,
     heightInInches,
     weightInPounds,
-    age,
+    DOB,
     isPremium,
     isCoach,
     fitbitRefresh,
@@ -149,7 +149,7 @@ userController.put("/updateUser", userValidation, async (req, res) => {
         lastName,
         heightInInches,
         weightInPounds,
-        age,
+        DOB,
         isPremium,
         isCoach,
         fitbitRefresh,
