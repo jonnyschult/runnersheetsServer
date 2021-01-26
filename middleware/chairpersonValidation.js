@@ -5,7 +5,7 @@ const chairpersonValidation = async (req, res, next) => {
     if (req.method == "OPTIONS") {
       next();
     } else {
-      const clubRole = await clubRoster.findOne({
+      const clubRole = await ClubRoster.findOne({
         where: { userId: req.user.id, role: "chairperson" },
       });
       if (clubRole) {

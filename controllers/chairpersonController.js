@@ -11,8 +11,12 @@ chairpersonController.post("/addChairperson", async (req, res) => {
   const { memberEmail, clubId, role } = req.body;
   try {
     const clubMember = await User.findOne({ where: { email: memberEmail } }); //Find userId for new clubMember by email address.
-    const clubRole = await ClubRoster.findOne({where: {id: clubMember.id, role}})
-    if(clubRole){throw {Num: 403} }
+    const clubRole = await ClubRoster.findOne({
+      where: { id: clubMember.id, role },
+    });
+    if (clubRole) {
+      throw { Num: 403 };
+    }
     if (clubMember) {
       await clubRoster.create({
         role,
@@ -52,6 +56,7 @@ chairpersonController.put("/updateClub", async (req, res) => {
       updatedClub,
     });
   } catch (err) {
+    console.log(err);
     if (err instanceof UniqueConstraintError) {
       res.status(409).json({
         message: `The name '${newClubName}' is already taken.`,
