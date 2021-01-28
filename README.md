@@ -32,6 +32,7 @@
     - Routes: ~/user
       - POST /register&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Registers new user account
       - POST /login&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Logs in a user
+      - GET /getAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Gets athlete information
       - PUT/updatePassword&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Updates password \*
       - PUT/updateUser&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update User Info \*
       - DELETE/removeUser&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete user \*
@@ -79,6 +80,16 @@
        - PUT /updateChairperson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update role of coach or manager (require atleast one manager to be on team)
        - DELETE /removeChairperson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete coach or manager from team
        - DELETE /removeClub&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete team
+  8. clubController\*\*
+     - Use: Enables users to create and control a club.
+     - Routes: ~/club
+       - POST /create&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Create club
+       - GET /getAthletes/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Gets all athletes associated with a club
+       - GET /getChairpersons/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Get all club chairpersons and vice chairpersons
+       - Get /getClubs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Gets all clubs associated with a user
+       - GET /getClubActivities/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Get activities for the club
+       - GET /getAthleteActivities/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Single athlete activities
+       - DELETE /removeSelf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Remove self from club
 
 ### Models:
 
@@ -99,3 +110,11 @@
      - Use: Provides a junction table for the many-to-many relation between teams and users
      - Columns: role, teamId, userId
      - Association: Is the junction table for the many to many relation between users and teams.
+  5. club:
+  - Use: Provides a model for the club table which stores minimal information about a club.
+  - Columns: clubName
+  - Association: club belongs to many users
+  6. clubRosters:
+     - Use: Provides a junction table for the many-to-many relation between clubs and users
+     - Columns: role, clubId, userId
+     - Association: Is the junction table for the many to many relation between users and clubs.
