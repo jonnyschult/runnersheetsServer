@@ -1,19 +1,10 @@
-import {User} from "./user"
+import { User } from "./user";
 import { RequestWithUser } from "./requestWithUser";
-import {Team} from "./team"
-import {TeamRoster} from "./teamRosters"
-import {Club} from './club'
-import {ClubRoster} from './clubRoster'
-import {Activity} from "./activity"
-import {CustomError} from "./customError"
+import { Team } from "./team";
+import { TeamsUsers } from "./teamsUsers";
+import { Club } from "./club";
+import { ClubsUsers } from "./clubsUsers";
+import { Activity } from "./activity";
+import { CustomError } from "./customError";
 
-export {
-  User,
-  Activity,
-  Team,
-  TeamRoster,
-  Club,
-  ClubRoster,
-  RequestWithUser,
-  CustomError
-};
+export { User, Activity, Team, TeamsUsers, Club, ClubsUsers, RequestWithUser, CustomError };

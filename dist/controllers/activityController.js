@@ -37,7 +37,7 @@ activityController.post("/create", middleware_1.userValidation, async (req, res)
     try {
         const info = req.body.info;
         const user = req.user;
-        if (info.userId !== user.id) {
+        if (info.user_id !== user.id) {
             throw new models_1.CustomError(401, "Request failed. You can only create your own activities.");
         }
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "activities", info);
@@ -76,7 +76,7 @@ activityController.get("/getActivities", middleware_1.userValidation, async (req
         const user = req.user;
         console.log(info);
         //Throw error if user does not own the data.
-        if (user.id !== info.userId) {
+        if (user.id !== info.user_id) {
             throw new models_1.CustomError(401, "Request failed. Can only retrieve your activities.");
         }
         //Utility function to get query arguments
@@ -109,7 +109,7 @@ activityController.get("/getActivitiesDate", middleware_1.userValidation, async 
         const startDate = req.query.startDate;
         const endDate = req.query.endDate;
         //Get data
-        const results = await db_1.default.query('SELECT * FROM activities WHERE "userId" = $1 AND date >= "$2"::DATE AND date <= $3::DATE;', [user.id, startDate, endDate]);
+        const results = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE);", [user.id, startDate, endDate]);
         const athleteActivities = results.rows;
         res.status(200).json({ message: "Activities retrieved", athleteActivities });
     }
@@ -131,7 +131,7 @@ activityController.put("/update", middleware_1.userValidation, async (req, res) 
         const info = req.body.info;
         const user = req.user;
         //Throw error if data doesn't belong to user
-        if (user.id !== info.userId) {
+        if (user.id !== info.user_id) {
             throw new models_1.CustomError(401, "Request failed. Must be your own data.");
         }
         //Utility function to get the query params
@@ -166,16 +166,16 @@ activityController.put("/update", middleware_1.userValidation, async (req, res) 
 activityController.delete("/removeActivity/:id", middleware_1.userValidation, async (req, res) => {
     try {
         const user = req.user;
-        const activityId = req.params.id;
+        const activity_id = req.params.id;
         //Get data for security check
-        const activityResults = await db_1.default.query("SELECT * FROM activities WHERE id = $1", [activityId]);
+        const activityResults = await db_1.default.query("SELECT * FROM activities WHERE id = $1", [activity_id]);
         const activity = activityResults.rows[0];
         //Throw error if not user's data
-        if (activity.userId !== user.id) {
+        if (activity.user_id !== user.id) {
             throw new models_1.CustomError(401, "Request failed. Can only delete your personal data.");
         }
         //Send DELETE query to DB
-        const results = await db_1.default.query("DELETE FROM activities WHERE id = $1", [activityId]);
+        const results = await db_1.default.query("DELETE FROM activities WHERE id = $1", [activity_id]);
         //Throw error if there is no return data
         if (results.rowCount == 0) {
             throw new models_1.CustomError(404, "Request failed. Update query problem.");

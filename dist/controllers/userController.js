@@ -132,9 +132,9 @@ userController.get("/getAthlete", middleware_1.userValidation, async (req, res) 
         const user = req.user;
         //Delete all password hashes for return data
         delete user.passwordhash;
-        const teamsResults = await db_1.default.query('SELECT * FROM teams INNER JOIN "teamRosters" ON teams.id="teamRosters"."teamId" WHERE "teamRosters"."userId"=$1;', [user.id]);
-        const clubsResults = await db_1.default.query('SELECT * FROM clubs INNER JOIN "clubRosters" ON club.id="clubRosters"."clubId" WHERE "clubRosters"."userId"=$1;', [user.id]);
-        const activitiesResults = await db_1.default.query('SELECT * FROM activities WHERE "userId"=$1 ORDER BY created_at LIMIT 10;', [user.id]);
+        const teamsResults = await db_1.default.query("SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;", [user.id]);
+        const clubsResults = await db_1.default.query("SELECT * FROM clubs INNER JOIN clubs_users ON club.id = clubs_users.club_id WHERE clubs_users.user_id = $1;", [user.id]);
+        const activitiesResults = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 ORDER BY created_at LIMIT 10;", [user.id]);
         const teams = teamsResults.rows;
         const clubs = clubsResults.rows;
         const activities = activitiesResults.rows;

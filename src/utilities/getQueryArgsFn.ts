@@ -1,10 +1,12 @@
-import { User, Activity, Club, ClubRoster, Team, TeamRoster } from "../models";
+import { User, Activity, Club, ClubsUsers, Team, TeamsUsers } from "../models";
+
+type Tables = "activities" | "users" | "teams" | "clubs" | "teams_users" | "clubs_users";
 
 type queries = "insert" | "update" | "select" | "delete";
 
-type Info = User | Activity | ClubRoster | Club | Team | TeamRoster | { id?: number };
+type Info = User | Activity | ClubsUsers | Club | Team | TeamsUsers | { id?: number };
 
-const getQueryArgs: (queryType: queries, table: string, info: Info, id?: number) => [string, any[]] = (
+const getQueryArgs: (queryType: queries, table: Tables, info: Info, id?: number) => [string, any[]] = (
   queryType,
   table,
   info,

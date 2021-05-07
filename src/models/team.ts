@@ -1,8 +1,8 @@
 export class Team {
   constructor(
-    public teamname: string,
-    public id?: number, 
+    public team_name: string,
+    public id?: number,
     public created_at?: string,
-    public updated_at?: string,
+    public updated_at?: string
   ) {}
 }

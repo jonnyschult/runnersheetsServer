@@ -13,10 +13,10 @@ const activityController = Router();
 ************************/
 activityController.post("/create", userValidation, async (req: RequestWithUser, res) => {
   try {
-    const info = req.body.info;
+    const info: Activity = req.body.info;
     const user = req.user!;
 
-    if (info.userId !== user.id) {
+    if (info.user_id !== user.id) {
       throw new CustomError(401, "Request failed. You can only create your own activities.");
     }
 
@@ -61,7 +61,7 @@ activityController.get("/getActivities", userValidation, async (req: RequestWith
     console.log(info);
 
     //Throw error if user does not own the data.
-    if (user.id !== info.userId) {
+    if (user.id !== info.user_id) {
       throw new CustomError(401, "Request failed. Can only retrieve your activities.");
     }
 
@@ -98,7 +98,7 @@ activityController.get("/getActivitiesDate", userValidation, async (req: Request
 
     //Get data
     const results = await pool.query(
-      'SELECT * FROM activities WHERE "userId" = $1 AND date >= "$2"::DATE AND date <= $3::DATE;',
+      "SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE);",
       [user.id, startDate, endDate]
     );
 
@@ -124,7 +124,7 @@ activityController.put("/update", userValidation, async (req: RequestWithUser, r
     const user = req.user!;
 
     //Throw error if data doesn't belong to user
-    if (user.id !== info.userId) {
+    if (user.id !== info.user_id) {
       throw new CustomError(401, "Request failed. Must be your own data.");
     }
 
@@ -164,20 +164,20 @@ activityController.put("/update", userValidation, async (req: RequestWithUser, r
 activityController.delete("/removeActivity/:id", userValidation, async (req: RequestWithUser, res) => {
   try {
     const user = req.user!;
-    const activityId = req.params.id;
+    const activity_id = req.params.id;
 
     //Get data for security check
-    const activityResults = await pool.query("SELECT * FROM activities WHERE id = $1", [activityId]);
+    const activityResults = await pool.query("SELECT * FROM activities WHERE id = $1", [activity_id]);
 
-    const activity = activityResults.rows[0];
+    const activity: Activity = activityResults.rows[0];
 
     //Throw error if not user's data
-    if (activity.userId !== user.id) {
+    if (activity.user_id !== user.id) {
       throw new CustomError(401, "Request failed. Can only delete your personal data.");
     }
 
     //Send DELETE query to DB
-    const results = await pool.query("DELETE FROM activities WHERE id = $1", [activityId]);
+    const results = await pool.query("DELETE FROM activities WHERE id = $1", [activity_id]);
 
     //Throw error if there is no return data
     if (results.rowCount == 0) {
