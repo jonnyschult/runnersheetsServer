@@ -15,12 +15,6 @@ clubController.post("/create", userValidation, async (req: RequestWithUser, res)
     const user = req.user!;
 
     let [queryString, valArray] = getQueryArgs("insert", "clubs", info);
-
-    //Throw custom error if problem with query string.
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Data not created. Query parameters problem.");
-    }
-
     //Send INSERT to DB
     const clubResults = await pool.query(queryString, valArray);
     //Throw error if nothing returnd from DB
@@ -67,9 +61,6 @@ clubController.post("/addAthlete", userValidation, async (req: RequestWithUser, 
     //adds found user to club.
     const queryInfo: ClubsUsers = { role: "athlete", club_id: info.club_id, user_id: clubMember.id! };
     const [queryString, valArray] = getQueryArgs("insert", "clubs_users", queryInfo);
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Data not created. Query parameters problem.");
-    }
     const clubRosterResults = await pool.query(queryString, valArray);
     const newRosterEntry = clubRosterResults.rows[0];
 
@@ -104,11 +95,9 @@ clubController.post("/addChairperson", userValidation, async (req: RequestWithUs
     //adds found user to club.
     const queryInfo: ClubsUsers = { role: info.role, club_id: info.club_id, user_id: clubMember.id! };
     const [queryString, valArray] = getQueryArgs("insert", "clubs_users", queryInfo);
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Data not created. Query parameters problem.");
-    }
     const clubRosterResults = await pool.query(queryString, valArray);
     const newRosterEntry: ClubsUsers = clubRosterResults.rows[0];
+
     res.status(200).json({
       message: `${clubMember.first_name} was added to the club as a ${newRosterEntry.role}.`,
       newRosterEntry,
@@ -124,298 +113,270 @@ clubController.post("/addChairperson", userValidation, async (req: RequestWithUs
   }
 });
 
-// /**************************
-//     GET ATHLETES
-// **************************/
-// clubController.get("/getAthletes/:id", async (req, res) => {
-//   const clubId = req.params.id;
-//   try {
-//     const clubInfo = await ClubRoster.findAll({
-//       //Find all athlete in club by id
-//       where: { clubId: clubId, role: "athlete" },
-//     });
-//     const clubUsersIds = clubInfo.map((athlete) => {
-//       //Map into an array athlete ids.
-//       return athlete.userId;
-//     });
-//     const athleteInfo = await User.findAll({
-//       //Use ids to find athletes in the user tables
-//       where: { id: clubUsersIds },
-//     });
-//     res.status(200).json({
-//       message: "Success",
-//       clubInfo,
-//       athleteInfo,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
+/**************************
+    GET CLUB MEMBERS 
+**************************/
+clubController.get("/getClubMembers/:id", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const club_id = +req.params.id;
+    const user = req.user!;
+    //checks that updater is chair, ice_chair, or athlete for club, if not, throws error.
+    await roleValidator(user.id!, club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
 
-// /**************************
-//     GET CHAIRPERSONS
-// **************************/
-// clubController.get("/getChairpersons/:id", async (req, res) => {
-//   const clubId = req.params.id;
-//   try {
-//     const roles = await ClubRoster.findAll({
-//       where: {
-//         clubId: clubId,
-//         role: { [Op.or]: ["chairperson", "vice chairperson"] },
-//       },
-//     });
-//     const chairpersonsIds = roles.map((athlete) => {
-//       return athlete.userId;
-//     });
-//     const chairpersons = await User.findAll({
-//       where: { id: chairpersonsIds },
-//     });
-//     res.status(200).json({
-//       message: "Success",
-//       chairpersons,
-//       roles,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
+    const athletesResults = await pool.query(
+      "SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND clubs_users.role = $2;",
+      [club_id, "athlete"]
+    );
+    const viceChairResults = await pool.query(
+      "SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND clubs_users.role = $2;",
+      [club_id, "vice_chair"]
+    );
+    const chairResults = await pool.query(
+      "SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND clubs_users.role = $2;",
+      [club_id, "chair"]
+    );
 
-// /**************************
-//     GET CLUBS
-// **************************/
-// clubController.get("/getClubs", async (req, res) => {
-//   const owner = req.user.id;
-//   try {
-//     const clubRostersInfo = await ClubRoster.findAll({
-//       //Find all clubs associated with user in club by id
-//       where: { userId: owner },
-//     });
-//     const clubIds = await clubRostersInfo.map((club) => {
-//       //Map into an array athlete ids.
-//       return club.clubId;
-//     });
-//     const clubsInfo = await Club.findAll({
-//       //Use ids to find athlete in the user tables
-//       where: { id: clubIds },
-//     });
-//     res.status(200).json({
-//       message: "Success",
-//       clubsInfo,
-//       clubRostersInfo,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
+    const athletes: User[] = athletesResults.rows;
+    const viceChairs: User[] = viceChairResults.rows;
+    const chairs: User[] = chairResults.rows;
 
-// /**************************
-//     GET CLUB ACTIVITIES
-// **************************/
-// clubController.get("/getClubActivities/:id", async (req, res) => {
-//   const clubId = req.params.id;
-//   const startDate = req.query.startDate;
-//   const endDate = req.query.endDate;
-//   try {
-//     const clubInfo = await ClubRoster.findAll({
-//       //Finds all club members activities
-//       where: { clubId: clubId },
-//     });
-//     const athleteIds = clubInfo.map((athlete) => {
-//       //Maps athlete id into a new array
-//       return athlete.userId;
-//     });
-//     const clubActivities = await User.findAll({
-//       //Finds all athletes' activities using the ids from the map method above.
-//       where: { id: athleteIds },
-//       include: [
-//         {
-//           model: Activity,
-//           where: { date: { [Op.between]: [startDate, endDate] } },
-//         },
-//       ],
-//     });
-//     res.status(200).json({
-//       message: "Success",
-//       clubInfo,
-//       clubActivities,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server Error", err });
-//   }
-// });
+    res.status(200).json({
+      message: "Success",
+      athletes,
+      viceChairs,
+      chairs,
+    });
+  } catch (error) {
+    console.log(error);
+    if (error.status < 500) {
+      res.status(error.status).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+});
 
-// /**************************
-//     GET ATHLETE ACTIVITIES
-// **************************/
-// clubController.get("/getAthleteActivities/:id", async (req, res) => {
-//   const athleteId = req.params.id;
-//   try {
-//     const clubActivities = await User.findOne({
-//       where: { id: athleteId },
-//       include: "activities",
-//     });
-//     res.status(200).json({
-//       message: "Success",
-//       clubActivities,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server Error" });
-//   }
-// });
+/**************************
+    GET CLUBS
+**************************/
+clubController.get("/getClubs", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const user = req.user!;
 
-// /********************************
-//     UPDATE CHAIRPERSON ROLE
-//  *******************************/
-//     clubController.put("/updateChairperson", async (req, res) => {
-//       const { userId, clubId, newRole } = req.body;
-//       try {
-//         const roleCount = await clubRoster.findAll({
-//           where: { clubId, role: "chairperson" },
-//         });
-//         if (roleCount.length === 1 && newRole === "vice chairperson") {
-//           //Requires at least one chairperson be on the club
-//           res
-//             .status(405)
-//             .json({ message: "Must have atleast one chairperson on a club" });
-//         } else {
-//           const clubMember = await clubRoster.findOne({
-//             where: { userId: userId, clubId: clubId },
-//           });
-//           const updatedClubMember = await clubMember.update({ role: newRole });
-//           res.status(200).json({
-//             message: "Role Updated",
-//             updatedClubMember,
-//           });
-//         }
-//       } catch (err) {
-//         res.status(500).json({ error: "Server Error" });
-//       }
-//     });
+    const clubsResults = await pool.query(
+      "SELECT * FROM clubs INNER JOIN clubs_users ON clubs.id = clubs_users.club_id WHERE clubs_users.user_id = $1;",
+      [user.id]
+    );
+    const clubs = clubsResults.rows;
+    res.status(200).json({ message: "Success", clubs });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
-// /**************************
-//     UPDATE CLUB NAME
-// **************************/
-// clubController.put("/updateClub", async (req, res) => {
-//   const { newClubName, clubId } = req.body;
-//   try {
-//     const club = await Club.findOne({ where: { id: clubId } });
-//     const updatedClub = await club.update({ clubName: newClubName });
-//     res.status(200).json({
-//       message: "Name updated!",
-//       updatedClub,
-//     });
-//   } catch (err) {
-//     console.log(err);
-//     if (err instanceof UniqueConstraintError) {
-//       res.status(409).json({
-//         message: `The name '${newClubName}' is already taken.`,
-//       });
-//     } else {
-//       res.status(500).json({ error: "Server Error" });
-//     }
-//   }
-// });
+/**************************
+    GET CLUB ACTIVITIES
+**************************/
+clubController.get("/getClubActivities/:id", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const club_id = +req.params.id;
+    const info = req.query;
+    const user = req.user!;
+    //checks that updater is chair, vice_chair, or athlete for club, if not, throws error.
+    await roleValidator(user.id!, club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
 
-// /**************************
-//     REMOVE SELF FROM CLUB
-// **************************/
-// clubController.delete("/removeSelf", async (req, res) => {
-//   const { clubId } = req.body;
-//   const athleteId = req.user.id;
-//   try {
-//     const athlete = await ClubRoster.findOne({
-//       //Finds athlete and requires their role to be "athlete".
-//       where: { clubId, userId: athleteId },
-//     });
-//     const roleCount = await ClubRoster.findAll({
-//       where: { clubId, role: "chairperson" },
-//     });
-//     if (roleCount.length === 1 && athlete.role === "chairperson") {
-//       //Requires at least one chairperson be on the club
-//       res.status(405).json({
-//         message:
-//           "Removal failed. Must have atleast one chairperson on a club. Go to clubs to delete clubs page.",
-//       });
-//     } else {
-//       const removed = await athlete.destroy(); //Removes that athlete from the clubRoster table.
-//       res.status(200).json({
-//         message: `Removed from club.`,
-//         removed,
-//       });
-//     }
-//   } catch (err) {
-//     console.log(err);
-//     res.status(500).json({
-//       message: "Error. Failed to be removed.",
-//       err,
-//     });
-//   }
-// });
+    //gets all athletes
+    const results = await pool.query(
+      "SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1;",
+      [club_id]
+    );
 
-// /**************************
-//     DELETE ATHLETE
-// **************************/
-// clubController.delete("/removeAthlete", async (req, res) => {
-//   const { athleteId, clubId } = req.body;
-//   try {
-//     const athlete = await ClubRoster.findOne({
-//       //Finds athlete and requires their role to be "athlete".
-//       where: { clubId: clubId, userId: athleteId, role: "athlete" },
-//     });
-//     const removed = await athlete.destroy(); //Removes that athlete from the table.
-//     res.status(200).json({
-//       message: `Athlete removed from club.`,
-//       removed,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       message: "Error. Athlete failed to be removed.",
-//       err,
-//     });
-//   }
-// });
+    const memberIds = results.rows.map((athlete: User) => athlete.id!);
+    //gets activities for each athlete using their ids.
+    const activities = memberIds.map((num) => {
+      pool.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE)", [
+        num,
+        info.start_date,
+        info.end_date,
+      ]);
+    });
 
-// /**************************
-//     DELETE CLUB MEMBER
-// **************************/
-// clubController.delete("/removeChairperson", async (req, res) => {
-//   const { chairpersonId, clubId } = req.body;
-//   try {
-//     const member = await clubRoster.findOne({
-//       where: { clubId: clubId, userId: chairpersonId },
-//     });
-//     const removed = await member.destroy();
-//     res.status(200).json({
-//       message: `Member removed from club.`,
-//       removed,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       message: "Error. Member failed to be removed.",
-//       err,
-//     });
-//   }
-// });
+    res.status(200).json({ message: "Success", activities });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+});
 
-// /**************************
-//     DELETE CLUB
-// **************************/
-// clubController.delete("/removeClub", async (req, res) => {
-//   const { clubId } = req.body;
-//   try {
-//     const club = await Club.findOne({
-//       where: { id: clubId },
-//     });
-//     await club.destroy();
-//     res.status(200).json({
-//       message: `Club Removed`,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       message: "Error. Club failed to delete.",
-//       err,
-//     });
-//   }
-// });
+/********************************
+    UPDATE CHAIRPERSON ROLE
+ *******************************/
+clubController.put("/updateChairperson", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const info: ClubsUsers = req.body.info;
+    const user = req.user!;
+    //checks that updater is chair for club, if not, throws error.
+    await roleValidator(user.id!, info.club_id, ["chair"], "clubs_users");
+
+    //Utility function to get query arguments
+    const [queryString, valArray] = getQueryArgs("update", "clubs_users", info, info.club_id);
+    //Pass UPDATE to DB
+    const result = await pool.query(queryString, valArray);
+    const updatedClubMemberRole = result.rows[0];
+
+    res.status(200).json({ message: "Role Updated", updatedClubMemberRole });
+  } catch (error) {
+    console.log(error);
+    if (error.status < 500) {
+      res.status(error.status).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+});
+
+/**************************
+    UPDATE CLUB NAME
+**************************/
+clubController.put("/updateClub", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const info: Club = req.body.info;
+    const user = req.user!;
+
+    await roleValidator(user.id!, info.id!, ["chair"], "clubs_users");
+
+    //Utility function to get query arguments
+    const [queryString, valArray] = getQueryArgs("update", "clubs", info, info.id);
+
+    //Pass UPDATE to DB
+    const result = await pool.query(queryString, valArray);
+
+    const updatedClub = result.rows[0];
+
+    res.status(200).json({ message: "Name updated!", updatedClub });
+  } catch (error) {
+    console.log(error);
+    if (error.status < 500) {
+      res.status(error.status).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+});
+
+/**************************
+    REMOVE SELF FROM CLUB
+**************************/
+clubController.delete("/removeSelf", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const info = req.query;
+    const user = req.user!;
+    //checks that updater is chair or manager on team, if not, throws error.
+    await roleValidator(user.id!, +info.club_id!, ["chair", "vice_chair", "athlete"], "clubs_users");
+
+    //Ensures that at least one chair remains on the club.
+    const chairResults = await pool.query("SELECT * FROM clubs_users WHERE club_id = $1 AND role = $2;", [
+      info.club_id,
+      "chair",
+    ]);
+    if (chairResults.rowCount === 1 && chairResults.rows[0].user_id === user.id) {
+      throw new CustomError(403, "Must be atleast one chair on club.");
+    }
+
+    //Send DELETE query to DB
+    const results = await pool.query("DELETE FROM clubs_users WHERE club_id = $1 AND user_id = $2", [
+      info.club_id,
+      user.id,
+    ]);
+
+    const removed = results.rows[0];
+
+    res.status(200).json({ message: "`Removed from club.", removed });
+  } catch (error) {
+    console.log(error);
+    if (error.status < 500) {
+      res.status(error.status).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Internal server error", error });
+    }
+  }
+});
+
+/**************************
+    DELETE ATHLETE
+**************************/
+clubController.delete("/removeAthlete", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const info = req.query;
+    const user = req.user!;
+    //checks that updater is chair or manager on team, if not, throws error.
+    await roleValidator(user.id!, +info.club_id!, ["chair", "vice_chair"], "clubs_users");
+
+    //Send DELETE query to DB
+    const results = await pool.query(
+      "DELETE FROM clubs_users WHERE club_id = $1 AND user_id = $2 AND role = $3",
+      [info.club_id, user.id, "athlete"]
+    );
+
+    const removed = results.rows[0];
+
+    res.status(200).json({ message: "Removed from club.", removed });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error. Athlete failed to be removed.",
+      error,
+    });
+  }
+});
+
+/**************************
+    DELETE CHAIRPERSON
+**************************/
+clubController.delete("/removeChairperson", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const info = req.query;
+    const user = req.user!;
+    //checks that deleter is chair, if not, throws error.
+    await roleValidator(user.id!, +info.club_id!, ["chair"], "clubs_users");
+
+    //Send DELETE query to DB
+    const results = await pool.query("DELETE FROM clubs_users WHERE club_id = $1 AND user_id = $2;", [
+      info.club_id,
+      user.id,
+    ]);
+
+    const removed = results.rows[0];
+
+    res.status(200).json({ message: "Removed from club.", removed });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error. Member failed to be removed.",
+      error,
+    });
+  }
+});
+
+/**************************
+    DELETE CLUB
+**************************/
+clubController.delete("/removeClub", userValidation, async (req: RequestWithUser, res) => {
+  try {
+    const info = req.query;
+    const user = req.user!;
+
+    await roleValidator(user.id!, +info.club_id!, ["chair"], "clubs_users");
+
+    //Send DELETE query to users table in DB
+    const results = await pool.query("DELETE FROM clubs WHERE id = $1", [info.club_id]);
+
+    const removed = results.rows[0];
+
+    res.status(200).json({ message: "Club Removed", removed });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error. Club failed to delete.",
+      error,
+    });
+  }
+});
 
 export default clubController;

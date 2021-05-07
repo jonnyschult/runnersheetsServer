@@ -31,14 +31,10 @@ const app = express_1.default();
 app.use(express_1.default.json());
 app.use(index_1.headers);
 app.use("/users", index_2.userController);
-// app.use("/fitbit", fitbitController);
+app.use("/fitbit", index_2.fitbitController);
 app.use("/activities", index_2.activityController);
-// app.use("/team", teamController);
-// app.use("/club", clubController);
-// app.use("/coach", coachController);
-// app.use("/manager", managerController);
-// app.use("/viceChair", viceChairController);
-// app.use("/chairperson", chairpersonController);
+app.use("/team", index_2.teamController);
+app.use("/club", index_2.clubController);
 app.listen(process.env.PORT, () => {
     console.log(`Listening on ${process.env.PORT}`);
 });

@@ -46,16 +46,8 @@ userController.post("/register", async (req, res) => {
         info.passwordhash = passwordhash;
         // utility function to generate query parameters
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "users", info);
-        //Throw custom error if problem with query string.
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. User not created. Query parameters problem.");
-        }
         //Send INSERT to users table in DB
         const result = await db_1.default.query(queryString, valArray);
-        //Throw error if nothing returnd from DB
-        if (result.rowCount === 0) {
-            throw new models_1.CustomError(400, "Request failed. User not created. DB Insertion problem.");
-        }
         //assign varraible for return data
         const newUser = result.rows[0];
         //jwt sign id to create token
@@ -155,10 +147,6 @@ userController.put("/updateUser", middleware_1.userValidation, async (req, res) 
         const user = req.user;
         //Utility function to get query arguments
         const [queryString, valArray] = getQueryArgsFn_1.default("update", "users", info, +user.id);
-        //If blank string, throw error
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Info not updated. Query parameters problem.");
-        }
         //Pass UPDATE to users table in DB
         const result = await db_1.default.query(queryString, valArray);
         const updatedUser = result.rows[0];

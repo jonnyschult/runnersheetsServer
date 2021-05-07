@@ -128,7 +128,7 @@ teamController.post("/addCoach", middleware_1.userValidation, async (req, res) =
 /**************************
     GET TEAM MEMBERS
 **************************/
-teamController.get("/getTeam/:id", middleware_1.userValidation, async (req, res) => {
+teamController.get("/getTeamMembers/:id", middleware_1.userValidation, async (req, res) => {
     try {
         const team_id = +req.params.id;
         const user = req.user;
@@ -155,13 +155,13 @@ teamController.get("/getTeam/:id", middleware_1.userValidation, async (req, res)
 /**************************
     GET TEAMS
 **************************/
-teamController.get("/coachTeams", middleware_1.userValidation, async (req, res) => {
+teamController.get("/getTeams", middleware_1.userValidation, async (req, res) => {
     try {
         const user = req.user;
         if (!user.coach) {
             throw new models_1.CustomError(401, "Must be a coach or manager to receive this data");
         }
-        const teamsResults = await db_1.default.query("SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.teams_id WHERE (teams_users.id = $1 AND teams_users.role = $1) OR (teams_users.id = $1 AND teams_users.role =$2);", [user.id, "coach", "manager"]);
+        const teamsResults = await db_1.default.query("SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1 AND (teams_users.role = $2 OR teams_users.role = $3);", [user.id, "coach", "manager"]);
         const teams = teamsResults.rows;
         res.status(200).json({ message: "Success", teams });
     }
@@ -222,43 +222,10 @@ teamController.put("/updateAthlete", middleware_1.userValidation, async (req, re
         await roleValidator_1.default(info.id, team_id, ["athlete"], "teams_users");
         //Utility function to get query arguments
         const [queryString, valArray] = getQueryArgsFn_1.default("update", "users", info, info.id);
-        //If blank string, throw error
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Info not updated. Query parameters problem.");
-        }
         //Pass UPDATE to users table in DB
         const result = await db_1.default.query(queryString, valArray);
         const updatedUser = result.rows[0];
         res.status(200).json({ message: "Account Updated!", updatedUser });
-    }
-    catch (error) {
-        console.log(error);
-        if (error.status < 500) {
-            res.status(error.status).json({ message: error.message });
-        }
-        else {
-            res.status(500).json({ message: "Internal server error", error });
-        }
-    }
-});
-/**************************
-    UPDATE TEAM NAME
-**************************/
-teamController.put("/updateTeam", middleware_1.userValidation, async (req, res) => {
-    try {
-        const info = req.body.info;
-        const user = req.user;
-        await roleValidator_1.default(user.id, info.id, ["manager"], "teams_users");
-        //Utility function to get query arguments
-        const [queryString, valArray] = getQueryArgsFn_1.default("update", "teams", info, info.id);
-        //If blank string, throw error
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Info not updated. Query parameters problem.");
-        }
-        //Pass UPDATE to users table in DB
-        const result = await db_1.default.query(queryString, valArray);
-        const updatedTeam = result.rows[0];
-        res.status(200).json({ message: "Name updated!", updatedTeam });
     }
     catch (error) {
         console.log(error);
@@ -280,18 +247,36 @@ teamController.put("/updateCoach", middleware_1.userValidation, async (req, res)
         //checks that updater is coach or manager on team, if not, throws error.
         await roleValidator_1.default(user.id, info.team_id, ["manager"], "teams_users");
         //Utility function to get query arguments
-        const [queryString, valArray] = getQueryArgsFn_1.default("update", "teams_users", info, info.id);
-        //If blank string, throw error
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Info not updated. Query parameters problem.");
-        }
+        const [queryString, valArray] = getQueryArgsFn_1.default("update", "teams_users", info, info.team_id);
         //Pass UPDATE to DB
         const result = await db_1.default.query(queryString, valArray);
-        const updatedTeamMember = result.rows[0];
-        res.status(200).json({
-            message: "Role Updated",
-            updatedTeamMember,
-        });
+        const updatedTeamMemberRole = result.rows[0];
+        res.status(200).json({ message: "Role Updated", updatedTeamMemberRole });
+    }
+    catch (error) {
+        console.log(error);
+        if (error.status < 500) {
+            res.status(error.status).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: "Internal server error", error });
+        }
+    }
+});
+/**************************
+    UPDATE TEAM NAME
+**************************/
+teamController.put("/updateTeam", middleware_1.userValidation, async (req, res) => {
+    try {
+        const info = req.body.info;
+        const user = req.user;
+        await roleValidator_1.default(user.id, info.id, ["manager"], "teams_users");
+        //Utility function to get query arguments
+        const [queryString, valArray] = getQueryArgsFn_1.default("update", "teams", info, info.id);
+        //Pass UPDATE to DB
+        const result = await db_1.default.query(queryString, valArray);
+        const updatedTeam = result.rows[0];
+        res.status(200).json({ message: "Name updated!", updatedTeam });
     }
     catch (error) {
         console.log(error);
@@ -312,18 +297,30 @@ teamController.delete("/removeCoach", middleware_1.userValidation, async (req, r
         const user = req.user;
         //checks that updater is coach or manager on team, if not, throws error.
         await roleValidator_1.default(user.id, +info.team_id, ["manager"], "teams_users");
-        //Send DELETE query to users table in DB
-        const removed = await db_1.default.query("DELETE FROM teams_users WHERE team_id = $1 AND user_id = $2", [
+        //Ensures that at least one manager remains on the team.
+        const manager = await db_1.default.query("SELECT * FROM teams_users WHERE team_id = $1 AND role = $2;", [
+            info.team_id,
+            "manager",
+        ]);
+        if (manager.rowCount === 1 && manager.rows[0].user_id === user.id) {
+            throw new models_1.CustomError(403, "Must be atleast one manager on team.");
+        }
+        //Send DELETE query to DB
+        const results = await db_1.default.query("DELETE FROM teams_users WHERE team_id = $1 AND user_id = $2", [
             info.team_id,
             info.athlete_id,
         ]);
+        const removed = results.rows[0];
         res.status(200).json({ message: `Coach removed from team.`, removed });
     }
-    catch (err) {
-        res.status(500).json({
-            message: "Error. Coach failed to be removed.",
-            err,
-        });
+    catch (error) {
+        console.log(error);
+        if (error.status < 500) {
+            res.status(error.status).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: "Internal server error", error });
+        }
     }
 });
 /**************************
@@ -335,10 +332,11 @@ teamController.delete("/removeAthlete", middleware_1.userValidation, async (req,
         const user = req.user;
         await roleValidator_1.default(user.id, +info.team_id, ["manager", "coach"], "teams_users");
         //Send DELETE query to users table in DB
-        const removed = await db_1.default.query("DELETE FROM teams_users WHERE team_id = $1 AND user_id = $2", [
+        const results = await db_1.default.query("DELETE FROM teams_users WHERE team_id = $1 AND user_id = $2", [
             info.team_id,
             info.athlete_id,
         ]);
+        const removed = results.rows[0];
         res.status(200).json({
             message: `Athlete removed from team.`,
             removed,
@@ -367,7 +365,8 @@ teamController.delete("/removeTeam", middleware_1.userValidation, async (req, re
         const coachesManagersResults = await db_1.default.query("SELECT * FROM users INNER JOIN teams_users ON users.id = teams_users.user_id WHERE teams_users.team_id = $1 AND (teams_users.role = $2 OR teams_users.role = $3);", [info.team_id, "coach", "manager"]);
         const coachesManagers = coachesManagersResults.rows;
         //Send DELETE query to users table in DB
-        const removed = await db_1.default.query("DELETE FROM teams WHERE id = $1", [info.team_id]);
+        const results = await db_1.default.query("DELETE FROM teams WHERE id = $1", [info.team_id]);
+        const removed = results.rows[0];
         //Updates user's coach status if the removed team was their only team.
         coachesManagers.forEach(async (coachMang) => {
             const results = await db_1.default.query("SELECT * FROM teams_users WHERE user_id = $1;", [coachMang.id]);
@@ -382,10 +381,10 @@ teamController.delete("/removeTeam", middleware_1.userValidation, async (req, re
         });
         res.status(200).json({ message: `Team Removed`, removed });
     }
-    catch (err) {
+    catch (error) {
         res.status(500).json({
             message: "Error. Team failed to delete.",
-            err,
+            error,
         });
     }
 });

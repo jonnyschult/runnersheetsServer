@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const models_1 = require("../models");
 const getQueryArgs = (queryType, table, info, id) => {
     if (queryType === "update") {
         if (info.id) {
@@ -96,6 +97,6 @@ const getQueryArgs = (queryType, table, info, id) => {
         let queryString = `DELETE FROM ${table} WHERE ${wheres}`;
         return [queryString, valArray];
     }
-    return ["", []];
+    throw new models_1.CustomError(400, "Failed to generate query arguments");
 };
 exports.default = getQueryArgs;

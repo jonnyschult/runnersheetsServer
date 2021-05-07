@@ -41,16 +41,8 @@ activityController.post("/create", middleware_1.userValidation, async (req, res)
             throw new models_1.CustomError(401, "Request failed. You can only create your own activities.");
         }
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "activities", info);
-        //Throw custom error if problem with query string.
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Activity not created. Query parameters problem.");
-        }
         //Send INSERT to DB
         const result = await db_1.default.query(queryString, valArray);
-        //Throw error if nothing returnd from DB
-        if (result.rowCount === 0) {
-            throw new models_1.CustomError(400, "Request failed. User not created. DB Insertion problem.");
-        }
         const newActivity = result.rows[0];
         res.status(200).json({
             result: newActivity,
@@ -81,11 +73,6 @@ activityController.get("/getActivities", middleware_1.userValidation, async (req
         }
         //Utility function to get query arguments
         const [queryString, valArray] = getQueryArgsFn_1.default("select", "activities", info);
-        const result = await db_1.default.query(queryString, valArray);
-        //If blank string, throw error
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Lesson assignment not created. Query parameters problem.");
-        }
         res.status(200).json({
             message: "Success. Student assigned lesson.",
         });
@@ -136,10 +123,6 @@ activityController.put("/update", middleware_1.userValidation, async (req, res) 
         }
         //Utility function to get the query params
         const [queryString, valArray] = getQueryArgsFn_1.default("update", "activities", info, +info.id);
-        //if string is empty, throw error
-        if (!queryString) {
-            throw new models_1.CustomError(400, "Request failed. Data not updated. Query parameters problem.");
-        }
         //Send update query to DB
         const result = await db_1.default.query(queryString, valArray);
         //Throw error if nothing is returned

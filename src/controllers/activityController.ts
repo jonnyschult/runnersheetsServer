@@ -22,17 +22,8 @@ activityController.post("/create", userValidation, async (req: RequestWithUser, 
 
     const [queryString, valArray] = getQueryArgs("insert", "activities", info);
 
-    //Throw custom error if problem with query string.
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Activity not created. Query parameters problem.");
-    }
-
     //Send INSERT to DB
     const result = await pool.query(queryString, valArray);
-    //Throw error if nothing returnd from DB
-    if (result.rowCount === 0) {
-      throw new CustomError(400, "Request failed. User not created. DB Insertion problem.");
-    }
 
     const newActivity = result.rows[0];
 
@@ -67,12 +58,6 @@ activityController.get("/getActivities", userValidation, async (req: RequestWith
 
     //Utility function to get query arguments
     const [queryString, valArray] = getQueryArgs("select", "activities", info);
-
-    const result = await pool.query(queryString, valArray);
-    //If blank string, throw error
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Lesson assignment not created. Query parameters problem.");
-    }
 
     res.status(200).json({
       message: "Success. Student assigned lesson.",
@@ -130,11 +115,6 @@ activityController.put("/update", userValidation, async (req: RequestWithUser, r
 
     //Utility function to get the query params
     const [queryString, valArray] = getQueryArgs("update", "activities", info, +info.id!);
-
-    //if string is empty, throw error
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Data not updated. Query parameters problem.");
-    }
 
     //Send update query to DB
     const result = await pool.query(queryString, valArray);

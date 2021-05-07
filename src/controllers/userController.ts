@@ -25,18 +25,8 @@ userController.post("/register", async (req, res) => {
 
     // utility function to generate query parameters
     const [queryString, valArray] = getQueryArgs("insert", "users", info);
-
-    //Throw custom error if problem with query string.
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. User not created. Query parameters problem.");
-    }
-
     //Send INSERT to users table in DB
     const result = await pool.query(queryString, valArray);
-    //Throw error if nothing returnd from DB
-    if (result.rowCount === 0) {
-      throw new CustomError(400, "Request failed. User not created. DB Insertion problem.");
-    }
 
     //assign varraible for return data
     const newUser = result.rows[0];
@@ -158,11 +148,6 @@ userController.put("/updateUser", userValidation, async (req: RequestWithUser, r
 
     //Utility function to get query arguments
     const [queryString, valArray] = getQueryArgs("update", "users", info, +user.id!);
-
-    //If blank string, throw error
-    if (!queryString) {
-      throw new CustomError(400, "Request failed. Info not updated. Query parameters problem.");
-    }
 
     //Pass UPDATE to users table in DB
     const result = await pool.query(queryString, valArray);

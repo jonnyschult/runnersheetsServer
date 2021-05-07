@@ -1,4 +1,4 @@
-import { User, Activity, Club, ClubsUsers, Team, TeamsUsers } from "../models";
+import { User, Activity, Club, ClubsUsers, Team, TeamsUsers, CustomError } from "../models";
 
 type Tables = "activities" | "users" | "teams" | "clubs" | "teams_users" | "clubs_users";
 
@@ -114,7 +114,7 @@ const getQueryArgs: (queryType: queries, table: Tables, info: Info, id?: number)
     return [queryString, valArray];
   }
 
-  return ["", []];
+  throw new CustomError(400, "Failed to generate query arguments");
 };
 
 export default getQueryArgs;
