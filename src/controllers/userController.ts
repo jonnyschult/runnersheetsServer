@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import { User, RequestWithUser, CustomError } from "../models/";
+import { User, RequestWithUser, CustomError, ClubsUsers, TeamsUsers, Club, Team } from "../models/";
 import { Response, Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -105,7 +105,7 @@ userController.post("/login", async (req, res) => {
 /**************************
     GET USER
 **************************/
-userController.get("/getAthlete", userValidation, async (req: RequestWithUser, res: Response) => {
+userController.get("/getUser", userValidation, async (req: RequestWithUser, res: Response) => {
   try {
     //get user from validation session
     const user = req.user!;
@@ -125,9 +125,32 @@ userController.get("/getAthlete", userValidation, async (req: RequestWithUser, r
       "SELECT * FROM activities WHERE user_id = $1 ORDER BY created_at LIMIT 10;",
       [user.id]
     );
+    const teamsUsersResults = await pool.query("SELECT * FROM teams_users WHERE user_id = $1;", [user.id]);
+    const clubsUsersResults = await pool.query("SELECT * FROM clubs_users WHERE user_id = $1;", [user.id]);
 
-    const teams = teamsResults.rows;
-    const clubs = clubsResults.rows;
+    const clubsUsers: ClubsUsers[] = clubsUsersResults.rows;
+    const teamsUsers: TeamsUsers[] = teamsUsersResults.rows;
+    const teamsNoRoles: Team[] = teamsResults.rows;
+    const clubsNoRoles: Club[] = clubsResults.rows;
+
+    const teams = teamsNoRoles.map((team) => {
+      teamsUsers.forEach((teamUser) => {
+        if (teamUser.team_id === team.id) {
+          team.role = teamUser.role;
+          return team;
+        }
+      });
+      return team;
+    });
+    const clubs = clubsNoRoles.map((club) => {
+      clubsUsers.forEach((clubUser) => {
+        if (clubUser.club_id === club.id) {
+          club.role = clubUser.role;
+          return club;
+        }
+      });
+      return club;
+    });
     const activities = activitiesResults.rows;
 
     //Responds with success message and the array of users
