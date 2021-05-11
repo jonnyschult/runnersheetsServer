@@ -82,7 +82,7 @@ teamController.post("/addAthlete", userValidation, async (req: RequestWithUser, 
     const teamRosterResults = await pool.query(queryString, valArray);
     const newRosterEntry = teamRosterResults.rows[0];
 
-    res.status(200).json({ message: "Athlete added to team", teamMember, newRosterEntry });
+    res.status(200).json({ message: "Athlete added to team", teamMember });
   } catch (error) {
     console.log(error);
     if (error.status < 500) {
@@ -256,9 +256,9 @@ teamController.put("/updateAthlete", userValidation, async (req: RequestWithUser
     //Pass UPDATE to users table in DB
     const result = await pool.query(queryString, valArray);
 
-    const updatedUser = result.rows[0];
+    const updatedAthlete = result.rows[0];
 
-    res.status(200).json({ message: "Account Updated!", updatedUser });
+    res.status(200).json({ message: "Account Updated!", updatedAthlete });
   } catch (error) {
     console.log(error);
     if (error.status < 500) {

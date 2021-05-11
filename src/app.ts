@@ -18,8 +18,8 @@ app.use(headers);
 app.use("/users", userController);
 app.use("/fitbit", fitbitController);
 app.use("/activities", activityController);
-app.use("/team", teamController);
-app.use("/club", clubController);
+app.use("/teams", teamController);
+app.use("/clubs", clubController);
 
 app.listen(process.env.PORT, () => {
   console.log(`Listening on ${process.env.PORT}`);
