@@ -23,7 +23,7 @@ CREATE TABLE users(
 
 CREATE TABLE activities(
     id SERIAL,
-    date TIMESTAMPTZ NOT NULL,
+    date bigint NOT NULL,
     distance_meters DOUBLE PRECISION NOT NULL,
     duration_seconds DOUBLE PRECISION NOT NULL,
     elevation_meters DOUBLE PRECISION,

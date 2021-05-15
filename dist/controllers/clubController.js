@@ -81,7 +81,7 @@ clubController.post("/addAthlete", middleware_1.userValidation, async (req, res)
 /********************************
     ADD Chairperson
  *******************************/
-clubController.post("/addChairperson", middleware_1.userValidation, async (req, res) => {
+clubController.post("/addChair", middleware_1.userValidation, async (req, res) => {
     try {
         const info = req.body.info;
         //finds user by email.
@@ -97,7 +97,6 @@ clubController.post("/addChairperson", middleware_1.userValidation, async (req, 
         const newRosterEntry = clubRosterResults.rows[0];
         res.status(200).json({
             message: `${clubMember.first_name} was added to the club as a ${newRosterEntry.role}.`,
-            newRosterEntry,
             clubMember,
         });
     }
@@ -197,8 +196,8 @@ clubController.put("/updateChairperson", middleware_1.userValidation, async (req
         const [queryString, valArray] = getQueryArgsFn_1.default("update", "clubs_users", info, info.club_id);
         //Pass UPDATE to DB
         const result = await db_1.default.query(queryString, valArray);
-        const updatedClubMemberRole = result.rows[0];
-        res.status(200).json({ message: "Role Updated", updatedClubMemberRole });
+        const updatedClubsUsersItem = result.rows[0];
+        res.status(200).json({ message: "Role Updated", updatedClubsUsersItem });
     }
     catch (error) {
         console.log(error);
@@ -238,15 +237,15 @@ clubController.put("/updateClub", middleware_1.userValidation, async (req, res) 
 /**************************
     REMOVE SELF FROM CLUB
 **************************/
-clubController.delete("/removeSelf", middleware_1.userValidation, async (req, res) => {
+clubController.delete("/removeSelf/:id", middleware_1.userValidation, async (req, res) => {
     try {
-        const info = req.query;
+        const club_id = req.params;
         const user = req.user;
         //checks that updater is chair or manager on team, if not, throws error.
-        await roleValidator_1.default(user.id, +info.club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
+        await roleValidator_1.default(user.id, +club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
         //Ensures that at least one chair remains on the club.
         const chairResults = await db_1.default.query("SELECT * FROM clubs_users WHERE club_id = $1 AND role = $2;", [
-            info.club_id,
+            club_id,
             "chair",
         ]);
         if (chairResults.rowCount === 1 && chairResults.rows[0].user_id === user.id) {
@@ -254,7 +253,7 @@ clubController.delete("/removeSelf", middleware_1.userValidation, async (req, re
         }
         //Send DELETE query to DB
         const results = await db_1.default.query("DELETE FROM clubs_users WHERE club_id = $1 AND user_id = $2", [
-            info.club_id,
+            club_id,
             user.id,
         ]);
         const removed = results.rows[0];

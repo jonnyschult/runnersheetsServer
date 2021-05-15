@@ -21,7 +21,7 @@ const activityController = express_1.Router();
 /************************
  CREATE ACTIVITIY
 ************************/
-activityController.post("/create", middleware_1.userValidation, async (req, res) => {
+activityController.post("/createActivity", middleware_1.userValidation, async (req, res) => {
     try {
         const info = req.body.info;
         const user = req.user;
@@ -33,7 +33,7 @@ activityController.post("/create", middleware_1.userValidation, async (req, res)
         const result = await db_1.default.query(queryString, valArray);
         const newActivity = result.rows[0];
         res.status(200).json({
-            result: newActivity,
+            newActivity,
             message: "Activity saved.",
         });
     }
@@ -78,15 +78,16 @@ activityController.get("/getActivities", middleware_1.userValidation, async (req
 /************************
  GET ACTIVITIES BY DATE
 ************************/
-activityController.get("/getActivitiesDate", middleware_1.userValidation, async (req, res) => {
+activityController.get("/getActivitiesByDate", middleware_1.userValidation, async (req, res) => {
     try {
         const user = req.user;
-        const startDate = req.query.startDate;
-        const endDate = req.query.endDate;
+        const startDate = req.query.start_date;
+        const endDate = req.query.end_date;
+        console.log(startDate, endDate);
         //Get data
-        const results = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE);", [user.id, startDate, endDate]);
-        const athleteActivities = results.rows;
-        res.status(200).json({ message: "Activities retrieved", athleteActivities });
+        const results = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);", [user.id, startDate, endDate]);
+        const activities = results.rows;
+        res.status(200).json({ message: "Activities retrieved", activities });
     }
     catch (error) {
         console.log(error);
@@ -101,7 +102,7 @@ activityController.get("/getActivitiesDate", middleware_1.userValidation, async 
 /************************
  UPDATE ACTIVITY
 ************************/
-activityController.put("/update", middleware_1.userValidation, async (req, res) => {
+activityController.put("/updateActivity", middleware_1.userValidation, async (req, res) => {
     try {
         const info = req.body.info;
         const user = req.user;

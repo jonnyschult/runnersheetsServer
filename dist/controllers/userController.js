@@ -106,23 +106,47 @@ userController.post("/login", async (req, res) => {
 /**************************
     GET USER
 **************************/
-userController.get("/getAthlete", middleware_1.userValidation, async (req, res) => {
+userController.get("/getUser", middleware_1.userValidation, async (req, res) => {
     try {
         //get user from validation session
         const user = req.user;
         //Delete all password hashes for return data
         delete user.passwordhash;
+        const startDate = new Date().getTime() - 604800000;
+        const endDate = new Date().getTime();
         const teamsResults = await db_1.default.query("SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;", [user.id]);
-        const clubsResults = await db_1.default.query("SELECT * FROM clubs INNER JOIN clubs_users ON club.id = clubs_users.club_id WHERE clubs_users.user_id = $1;", [user.id]);
-        const activitiesResults = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 ORDER BY created_at LIMIT 10;", [user.id]);
-        const teams = teamsResults.rows;
-        const clubs = clubsResults.rows;
+        const clubsResults = await db_1.default.query("SELECT * FROM clubs INNER JOIN clubs_users ON clubs.id = clubs_users.club_id WHERE clubs_users.user_id = $1;", [user.id]);
+        const activitiesResults = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);", [user.id, startDate, endDate]);
+        const teamsUsersResults = await db_1.default.query("SELECT * FROM teams_users WHERE user_id = $1;", [user.id]);
+        const clubsUsersResults = await db_1.default.query("SELECT * FROM clubs_users WHERE user_id = $1;", [user.id]);
+        const clubsUsers = clubsUsersResults.rows;
+        const teamsUsers = teamsUsersResults.rows;
+        const teamsNoRoles = teamsResults.rows;
+        const clubsNoRoles = clubsResults.rows;
+        const teams = teamsNoRoles.map((team) => {
+            teamsUsers.forEach((teamUser) => {
+                if (teamUser.team_id === team.id) {
+                    team.role = teamUser.role;
+                    return team;
+                }
+            });
+            return team;
+        });
+        const clubs = clubsNoRoles.map((club) => {
+            clubsUsers.forEach((clubUser) => {
+                if (clubUser.club_id === club.id) {
+                    club.role = clubUser.role;
+                    return club;
+                }
+            });
+            return club;
+        });
         const activities = activitiesResults.rows;
         //Responds with success message and the array of users
         res.status(200).json({ message: "Success", user, clubs, teams, activities });
     }
     catch (error) {
-        console.log(error);
+        console.log("In userController getUser", error);
         res.status(500).json({ message: "Internal server error", error });
     }
 });

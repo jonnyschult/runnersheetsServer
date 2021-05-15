@@ -21,8 +21,8 @@ app.use(index_1.headers);
 app.use("/users", index_2.userController);
 app.use("/fitbit", index_2.fitbitController);
 app.use("/activities", index_2.activityController);
-app.use("/team", index_2.teamController);
-app.use("/club", index_2.clubController);
+app.use("/teams", index_2.teamController);
+app.use("/clubs", index_2.clubController);
 app.listen(process.env.PORT, () => {
     console.log(`Listening on ${process.env.PORT}`);
 });

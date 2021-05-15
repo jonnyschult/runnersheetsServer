@@ -11,7 +11,7 @@ const activityController = Router();
 /************************
  CREATE ACTIVITIY
 ************************/
-activityController.post("/create", userValidation, async (req: RequestWithUser, res) => {
+activityController.post("/createActivity", userValidation, async (req: RequestWithUser, res) => {
   try {
     const info: Activity = req.body.info;
     const user = req.user!;
@@ -28,7 +28,7 @@ activityController.post("/create", userValidation, async (req: RequestWithUser, 
     const newActivity = result.rows[0];
 
     res.status(200).json({
-      result: newActivity,
+      newActivity,
       message: "Activity saved.",
     });
   } catch (error) {
@@ -75,21 +75,23 @@ activityController.get("/getActivities", userValidation, async (req: RequestWith
 /************************
  GET ACTIVITIES BY DATE
 ************************/
-activityController.get("/getActivitiesDate", userValidation, async (req: RequestWithUser, res) => {
+activityController.get("/getActivitiesByDate", userValidation, async (req: RequestWithUser, res) => {
   try {
     const user = req.user!;
-    const startDate = req.query.startDate;
-    const endDate = req.query.endDate;
+    const startDate = req.query.start_date;
+    const endDate = req.query.end_date;
+
+    console.log(startDate, endDate);
 
     //Get data
     const results = await pool.query(
-      "SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE);",
+      "SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);",
       [user.id, startDate, endDate]
     );
 
-    const athleteActivities = results.rows;
+    const activities = results.rows;
 
-    res.status(200).json({ message: "Activities retrieved", athleteActivities });
+    res.status(200).json({ message: "Activities retrieved", activities });
   } catch (error) {
     console.log(error);
     if (error.status < 500) {
@@ -103,7 +105,7 @@ activityController.get("/getActivitiesDate", userValidation, async (req: Request
 /************************
  UPDATE ACTIVITY
 ************************/
-activityController.put("/update", userValidation, async (req: RequestWithUser, res) => {
+activityController.put("/updateActivity", userValidation, async (req: RequestWithUser, res) => {
   try {
     const info: Activity = req.body.info;
     const user = req.user!;

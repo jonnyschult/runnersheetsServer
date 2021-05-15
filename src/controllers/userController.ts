@@ -113,17 +113,20 @@ userController.get("/getUser", userValidation, async (req: RequestWithUser, res:
     //Delete all password hashes for return data
     delete user.passwordhash;
 
+    const startDate = new Date().getTime() - 604800000;
+    const endDate = new Date().getTime();
+
     const teamsResults = await pool.query(
       "SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;",
       [user.id]
     );
     const clubsResults = await pool.query(
-      "SELECT * FROM clubs INNER JOIN clubs_users ON club.id = clubs_users.club_id WHERE clubs_users.user_id = $1;",
+      "SELECT * FROM clubs INNER JOIN clubs_users ON clubs.id = clubs_users.club_id WHERE clubs_users.user_id = $1;",
       [user.id]
     );
     const activitiesResults = await pool.query(
-      "SELECT * FROM activities WHERE user_id = $1 ORDER BY created_at LIMIT 10;",
-      [user.id]
+      "SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);",
+      [user.id, startDate, endDate]
     );
     const teamsUsersResults = await pool.query("SELECT * FROM teams_users WHERE user_id = $1;", [user.id]);
     const clubsUsersResults = await pool.query("SELECT * FROM clubs_users WHERE user_id = $1;", [user.id]);
@@ -156,7 +159,7 @@ userController.get("/getUser", userValidation, async (req: RequestWithUser, res:
     //Responds with success message and the array of users
     res.status(200).json({ message: "Success", user, clubs, teams, activities });
   } catch (error) {
-    console.log(error);
+    console.log("In userController getUser", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });

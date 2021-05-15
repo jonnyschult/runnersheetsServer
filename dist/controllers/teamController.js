@@ -39,7 +39,9 @@ teamController.post("/create", middleware_1.userValidation, async (req, res, nex
             const userResults = await db_1.default.query("UPDATE users SET coach = true WEHRE id = $1", [user.id]);
             updatedUser = userResults.rows[0];
         }
-        res.status(200).json({ message: "Team Created", newTeam, newTeamRoster, updatedUser });
+        delete updatedUser.passwordhash;
+        newTeam.role = newTeamRoster.role;
+        res.status(200).json({ message: "Team Created", newTeam, updatedUser });
     }
     catch (error) {
         console.log(error);
@@ -74,7 +76,7 @@ teamController.post("/addAthlete", middleware_1.userValidation, async (req, res)
         }
         const teamRosterResults = await db_1.default.query(queryString, valArray);
         const newRosterEntry = teamRosterResults.rows[0];
-        res.status(200).json({ message: "Athlete added to team", teamMember, newRosterEntry });
+        res.status(200).json({ message: "Athlete added to team", teamMember });
     }
     catch (error) {
         console.log(error);
@@ -112,7 +114,6 @@ teamController.post("/addCoach", middleware_1.userValidation, async (req, res) =
         res.status(200).json({
             message: `${teamMember.first_name} was added to the team as a ${teamsUsersInfo.role}.`,
             teamMember,
-            teamsUsersInfo,
         });
     }
     catch (error) {
@@ -188,14 +189,8 @@ teamController.get("/getTeamActivities/:id", middleware_1.userValidation, async 
         //gets all athletes
         const results = await db_1.default.query("SELECT * FROM users INNER JOIN teams_users ON users.id = teams_users.user_id WHERE teams_users.team_id = $1 AND teams_users.role = $2;", [team_id, "athlete"]);
         const athleteIds = results.rows.map((athlete) => athlete.id);
-        //gets activities for each athlete using their ids.
-        const activities = athleteIds.map((num) => {
-            db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE)", [
-                num,
-                info.start_date,
-                info.end_date,
-            ]);
-        });
+        const activitiesResults = await db_1.default.query("SELECT * FROM activities WHERE user_id = ANY ($1) AND (date >= $2::DATE AND date <= $3::DATE)", [athleteIds, info.start_date, info.end_date]);
+        const activities = activitiesResults.rows;
         res.status(200).json({ message: "Success", activities });
     }
     catch (error) {
@@ -224,8 +219,8 @@ teamController.put("/updateAthlete", middleware_1.userValidation, async (req, re
         const [queryString, valArray] = getQueryArgsFn_1.default("update", "users", info, info.id);
         //Pass UPDATE to users table in DB
         const result = await db_1.default.query(queryString, valArray);
-        const updatedUser = result.rows[0];
-        res.status(200).json({ message: "Account Updated!", updatedUser });
+        const updatedAthlete = result.rows[0];
+        res.status(200).json({ message: "Account Updated!", updatedAthlete });
     }
     catch (error) {
         console.log(error);
@@ -250,8 +245,8 @@ teamController.put("/updateCoach", middleware_1.userValidation, async (req, res)
         const [queryString, valArray] = getQueryArgsFn_1.default("update", "teams_users", info, info.team_id);
         //Pass UPDATE to DB
         const result = await db_1.default.query(queryString, valArray);
-        const updatedTeamMemberRole = result.rows[0];
-        res.status(200).json({ message: "Role Updated", updatedTeamMemberRole });
+        const updatedTeamsUsesItem = result.rows[0];
+        res.status(200).json({ message: "Role Updated", updatedTeamsUsesItem });
     }
     catch (error) {
         console.log(error);
@@ -308,7 +303,7 @@ teamController.delete("/removeCoach", middleware_1.userValidation, async (req, r
         //Send DELETE query to DB
         const results = await db_1.default.query("DELETE FROM teams_users WHERE team_id = $1 AND user_id = $2", [
             info.team_id,
-            info.athlete_id,
+            info.user_id,
         ]);
         const removed = results.rows[0];
         res.status(200).json({ message: `Coach removed from team.`, removed });
@@ -355,17 +350,17 @@ teamController.delete("/removeAthlete", middleware_1.userValidation, async (req,
 /**************************
     DELETE TEAM
 **************************/
-teamController.delete("/removeTeam", middleware_1.userValidation, async (req, res) => {
+teamController.delete("/removeTeam/:id", middleware_1.userValidation, async (req, res) => {
     try {
-        const info = req.query;
+        const team_id = +req.params.id;
         const user = req.user;
-        await roleValidator_1.default(user.id, +info.team_id, ["manager"], "teams_users");
+        await roleValidator_1.default(user.id, team_id, ["manager"], "teams_users");
         //Gets all coaches and managers associated with a team
         let updatedUser = user;
-        const coachesManagersResults = await db_1.default.query("SELECT * FROM users INNER JOIN teams_users ON users.id = teams_users.user_id WHERE teams_users.team_id = $1 AND (teams_users.role = $2 OR teams_users.role = $3);", [info.team_id, "coach", "manager"]);
+        const coachesManagersResults = await db_1.default.query("SELECT * FROM users INNER JOIN teams_users ON users.id = teams_users.user_id WHERE teams_users.team_id = $1 AND (teams_users.role = $2 OR teams_users.role = $3);", [team_id, "coach", "manager"]);
         const coachesManagers = coachesManagersResults.rows;
         //Send DELETE query to users table in DB
-        const results = await db_1.default.query("DELETE FROM teams WHERE id = $1", [info.team_id]);
+        const results = await db_1.default.query("DELETE FROM teams WHERE id = $1", [team_id]);
         const removed = results.rows[0];
         //Updates user's coach status if the removed team was their only team.
         coachesManagers.forEach(async (coachMang) => {
