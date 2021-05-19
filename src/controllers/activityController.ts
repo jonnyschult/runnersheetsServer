@@ -52,14 +52,18 @@ activityController.get("/getActivities", userValidation, async (req: RequestWith
     console.log(info);
 
     //Throw error if user does not own the data.
-    if (user.id !== info.user_id) {
+    if (user.id !== +info.user_id!) {
       throw new CustomError(401, "Request failed. Can only retrieve your activities.");
     }
 
     //Utility function to get query arguments
     const [queryString, valArray] = getQueryArgs("select", "activities", info);
 
+    const results = await pool.query(queryString, valArray);
+    const activities = results.rows;
+
     res.status(200).json({
+      activities,
       message: "Success. Student assigned lesson.",
     });
   } catch (error) {

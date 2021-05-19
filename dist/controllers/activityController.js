@@ -56,12 +56,15 @@ activityController.get("/getActivities", middleware_1.userValidation, async (req
         const user = req.user;
         console.log(info);
         //Throw error if user does not own the data.
-        if (user.id !== info.user_id) {
+        if (user.id !== +info.user_id) {
             throw new models_1.CustomError(401, "Request failed. Can only retrieve your activities.");
         }
         //Utility function to get query arguments
         const [queryString, valArray] = getQueryArgsFn_1.default("select", "activities", info);
+        const results = await db_1.default.query(queryString, valArray);
+        const activities = results.rows;
         res.status(200).json({
+            activities,
             message: "Success. Student assigned lesson.",
         });
     }
