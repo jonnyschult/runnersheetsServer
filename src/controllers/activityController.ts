@@ -147,23 +147,25 @@ activityController.put("/updateActivity", userValidation, async (req: RequestWit
 /************************
  DELETE ACTIVITIY
 ************************/
-activityController.delete("/removeActivity/:id", userValidation, async (req: RequestWithUser, res) => {
+activityController.delete("/removeActivity", userValidation, async (req: RequestWithUser, res) => {
   try {
     const user = req.user!;
-    const activity_id = req.params.id;
+    const info = req.query;
 
+    const [selQueryString, selValArray] = getQueryArgs("select", "activities", info);
     //Get data for security check
-    const activityResults = await pool.query("SELECT * FROM activities WHERE id = $1", [activity_id]);
+    const activityResults = await pool.query(selQueryString, selValArray);
 
     const activity: Activity = activityResults.rows[0];
 
     //Throw error if not user's data
-    if (activity.user_id !== user.id) {
-      throw new CustomError(401, "Request failed. Can only delete your personal data.");
+    if (activity === undefined || activity.user_id !== user.id) {
+      throw new CustomError(401, "Request failed. Either no permissions or activity could not be found.");
     }
 
+    const [delQueryString, delValArray] = getQueryArgs("delete", "activities", info);
     //Send DELETE query to DB
-    const results = await pool.query("DELETE FROM activities WHERE id = $1", [activity_id]);
+    const results = await pool.query(delQueryString, delValArray);
 
     //Throw error if there is no return data
     if (results.rowCount == 0) {

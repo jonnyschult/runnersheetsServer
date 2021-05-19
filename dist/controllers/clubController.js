@@ -13,10 +13,11 @@ const clubController = express_1.Router();
 /****************************
     CREATE CLUB
 ****************************/
-clubController.post("/create", middleware_1.userValidation, async (req, res) => {
+clubController.post("/createClub", middleware_1.userValidation, async (req, res) => {
     try {
-        const info = req.body.clubName;
+        const info = req.body.info;
         const user = req.user;
+        console.log(info);
         let [queryString, valArray] = getQueryArgsFn_1.default("insert", "clubs", info);
         //Send INSERT to DB
         const clubResults = await db_1.default.query(queryString, valArray);
@@ -167,16 +168,8 @@ clubController.get("/getClubActivities/:id", middleware_1.userValidation, async 
         //checks that updater is chair, vice_chair, or athlete for club, if not, throws error.
         await roleValidator_1.default(user.id, club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
         //gets all athletes
-        const results = await db_1.default.query("SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1;", [club_id]);
-        const memberIds = results.rows.map((athlete) => athlete.id);
-        //gets activities for each athlete using their ids.
-        const activities = memberIds.map((num) => {
-            db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE)", [
-                num,
-                info.start_date,
-                info.end_date,
-            ]);
-        });
+        const results = await db_1.default.query("SELECT * FROM activities INNER JOIN clubs_users ON activities.user_id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND (date >= $2 AND date <= $3);", [club_id, info.start_date, info.end_date]);
+        const activities = results.rows;
         res.status(200).json({ message: "Success", activities });
     }
     catch (error) {

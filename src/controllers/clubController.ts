@@ -9,11 +9,12 @@ const clubController = Router();
 /****************************
     CREATE CLUB
 ****************************/
-clubController.post("/create", userValidation, async (req: RequestWithUser, res) => {
+clubController.post("/createClub", userValidation, async (req: RequestWithUser, res) => {
   try {
-    const info: Club = req.body.clubName;
+    const info = req.body.info;
     const user = req.user!;
 
+    console.log(info);
     let [queryString, valArray] = getQueryArgs("insert", "clubs", info);
     //Send INSERT to DB
     const clubResults = await pool.query(queryString, valArray);
@@ -186,19 +187,11 @@ clubController.get("/getClubActivities/:id", userValidation, async (req: Request
 
     //gets all athletes
     const results = await pool.query(
-      "SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1;",
-      [club_id]
+      "SELECT * FROM activities INNER JOIN clubs_users ON activities.user_id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND (date >= $2 AND date <= $3);",
+      [club_id, info.start_date, info.end_date]
     );
 
-    const memberIds = results.rows.map((athlete: User) => athlete.id!);
-    //gets activities for each athlete using their ids.
-    const activities = memberIds.map((num) => {
-      pool.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2::DATE AND date <= $3::DATE)", [
-        num,
-        info.start_date,
-        info.end_date,
-      ]);
-    });
+    const activities = results.rows;
 
     res.status(200).json({ message: "Success", activities });
   } catch (error) {

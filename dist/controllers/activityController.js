@@ -138,19 +138,21 @@ activityController.put("/updateActivity", middleware_1.userValidation, async (re
 /************************
  DELETE ACTIVITIY
 ************************/
-activityController.delete("/removeActivity/:id", middleware_1.userValidation, async (req, res) => {
+activityController.delete("/removeActivity", middleware_1.userValidation, async (req, res) => {
     try {
         const user = req.user;
-        const activity_id = req.params.id;
+        const info = req.query;
+        const [selQueryString, selValArray] = getQueryArgsFn_1.default("select", "activities", info);
         //Get data for security check
-        const activityResults = await db_1.default.query("SELECT * FROM activities WHERE id = $1", [activity_id]);
+        const activityResults = await db_1.default.query(selQueryString, selValArray);
         const activity = activityResults.rows[0];
         //Throw error if not user's data
-        if (activity.user_id !== user.id) {
-            throw new models_1.CustomError(401, "Request failed. Can only delete your personal data.");
+        if (activity === undefined || activity.user_id !== user.id) {
+            throw new models_1.CustomError(401, "Request failed. Either no permissions or activity could not be found.");
         }
+        const [delQueryString, delValArray] = getQueryArgsFn_1.default("delete", "activities", info);
         //Send DELETE query to DB
-        const results = await db_1.default.query("DELETE FROM activities WHERE id = $1", [activity_id]);
+        const results = await db_1.default.query(delQueryString, delValArray);
         //Throw error if there is no return data
         if (results.rowCount == 0) {
             throw new models_1.CustomError(404, "Request failed. Update query problem.");
