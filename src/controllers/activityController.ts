@@ -48,9 +48,6 @@ activityController.get("/getActivities", userValidation, async (req: RequestWith
   try {
     const info = req.query;
     const user = req.user!;
-
-    console.log(info);
-
     //Throw error if user does not own the data.
     if (user.id !== +info.user_id!) {
       throw new CustomError(401, "Request failed. Can only retrieve your activities.");

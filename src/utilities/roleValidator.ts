@@ -34,7 +34,7 @@ const roleValidator: (
 
   const validManagerResults = await pool.query(queryString, valArray);
   if (validManagerResults.rowCount === 0) {
-    throw new CustomError(401, "User does not have privileges to access this data.");
+    throw new CustomError(401, "User does not have privileges to perform this action.");
   }
 
   return true;

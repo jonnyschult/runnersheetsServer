@@ -85,6 +85,17 @@ clubController.post("/addAthlete", middleware_1.userValidation, async (req, res)
 clubController.post("/addChair", middleware_1.userValidation, async (req, res) => {
     try {
         const info = req.body.info;
+        const user = req.user;
+        //checks role permissions. if not the proper role, throws error.
+        if (info.role === "chair") {
+            await roleValidator_1.default(user.id, info.club_id, ["chair"], "clubs_users");
+        }
+        else if (info.role === "vice_chair") {
+            await roleValidator_1.default(user.id, info.club_id, ["chair", "vice_chair"], "clubs_users");
+        }
+        else {
+            throw new models_1.CustomError(401, "That role cannot be added through this route.");
+        }
         //finds user by email.
         const clubMemberResults = await db_1.default.query("SELECT * FROM users WHERE email = $1", [info.email]);
         if (clubMemberResults.rowCount === 0) {
@@ -118,7 +129,7 @@ clubController.get("/getClubMembers/:id", middleware_1.userValidation, async (re
     try {
         const club_id = +req.params.id;
         const user = req.user;
-        //checks that updater is chair, ice_chair, or athlete for club, if not, throws error.
+        //checks that updater is chair, vice_chair, or athlete for club, if not, throws error.
         await roleValidator_1.default(user.id, club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
         const athletesResults = await db_1.default.query("SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND clubs_users.role = $2;", [club_id, "athlete"]);
         const viceChairResults = await db_1.default.query("SELECT * FROM users INNER JOIN clubs_users ON users.id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND clubs_users.role = $2;", [club_id, "vice_chair"]);
@@ -185,10 +196,8 @@ clubController.put("/updateChairperson", middleware_1.userValidation, async (req
         const user = req.user;
         //checks that updater is chair for club, if not, throws error.
         await roleValidator_1.default(user.id, info.club_id, ["chair"], "clubs_users");
-        //Utility function to get query arguments
-        const [queryString, valArray] = getQueryArgsFn_1.default("update", "clubs_users", info, info.club_id);
         //Pass UPDATE to DB
-        const result = await db_1.default.query(queryString, valArray);
+        const result = await db_1.default.query(`UPDATE clubs_users SET role = $1 WHERE club_id = $2 AND user_id = $3 RETURNING *`, [info.role, info.club_id, info.user_id]);
         const updatedClubsUsersItem = result.rows[0];
         res.status(200).json({ message: "Role Updated", updatedClubsUsersItem });
     }
@@ -232,9 +241,9 @@ clubController.put("/updateClub", middleware_1.userValidation, async (req, res) 
 **************************/
 clubController.delete("/removeSelf/:id", middleware_1.userValidation, async (req, res) => {
     try {
-        const club_id = req.params;
+        const club_id = req.params.id;
         const user = req.user;
-        //checks that updater is chair or manager on team, if not, throws error.
+        //checks that user is on team/club, if not, throws error.
         await roleValidator_1.default(user.id, +club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
         //Ensures that at least one chair remains on the club.
         const chairResults = await db_1.default.query("SELECT * FROM clubs_users WHERE club_id = $1 AND role = $2;", [
@@ -250,7 +259,7 @@ clubController.delete("/removeSelf/:id", middleware_1.userValidation, async (req
             user.id,
         ]);
         const removed = results.rows[0];
-        res.status(200).json({ message: "`Removed from club.", removed });
+        res.status(200).json({ message: "Removed from club.", removed });
     }
     catch (error) {
         console.log(error);
@@ -270,17 +279,23 @@ clubController.delete("/removeAthlete", middleware_1.userValidation, async (req,
         const info = req.query;
         const user = req.user;
         //checks that updater is chair or manager on team, if not, throws error.
-        await roleValidator_1.default(user.id, +info.club_id, ["chair", "vice_chair"], "clubs_users");
+        await roleValidator_1.default(+user.id, +info.club_id, ["chair", "vice_chair"], "clubs_users");
         //Send DELETE query to DB
-        const results = await db_1.default.query("DELETE FROM clubs_users WHERE club_id = $1 AND user_id = $2 AND role = $3", [info.club_id, user.id, "athlete"]);
-        const removed = results.rows[0];
-        res.status(200).json({ message: "Removed from club.", removed });
+        const [queryString, valArray] = getQueryArgsFn_1.default("delete", "clubs_users", info);
+        const results = await db_1.default.query(queryString, valArray);
+        if (results.rowCount === 0) {
+            throw new models_1.CustomError(404, "Clubmember not deleted. Could not find clubmember.");
+        }
+        res.status(200).json({ message: "Removed from club." });
     }
     catch (error) {
-        res.status(500).json({
-            message: "Error. Athlete failed to be removed.",
-            error,
-        });
+        console.log(error);
+        if (error.status < 500) {
+            res.status(error.status).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: "Internal server error", error });
+        }
     }
 });
 /**************************
@@ -292,6 +307,14 @@ clubController.delete("/removeChairperson", middleware_1.userValidation, async (
         const user = req.user;
         //checks that deleter is chair, if not, throws error.
         await roleValidator_1.default(user.id, +info.club_id, ["chair"], "clubs_users");
+        //Ensures that at least one chair remains on the club.
+        const chairResults = await db_1.default.query("SELECT * FROM clubs_users WHERE club_id = $1 AND role = $2;", [
+            +info.club_id,
+            "chair",
+        ]);
+        if (chairResults.rowCount === 1 && chairResults.rows[0].user_id === user.id) {
+            throw new models_1.CustomError(403, "Must be atleast one chair on club.");
+        }
         //Send DELETE query to DB
         const results = await db_1.default.query("DELETE FROM clubs_users WHERE club_id = $1 AND user_id = $2;", [
             info.club_id,
@@ -301,10 +324,13 @@ clubController.delete("/removeChairperson", middleware_1.userValidation, async (
         res.status(200).json({ message: "Removed from club.", removed });
     }
     catch (error) {
-        res.status(500).json({
-            message: "Error. Member failed to be removed.",
-            error,
-        });
+        console.log(error);
+        if (error.status < 500) {
+            res.status(error.status).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: "Internal server error", error });
+        }
     }
 });
 /**************************
@@ -314,17 +340,20 @@ clubController.delete("/removeClub", middleware_1.userValidation, async (req, re
     try {
         const info = req.query;
         const user = req.user;
-        await roleValidator_1.default(user.id, +info.club_id, ["chair"], "clubs_users");
+        await roleValidator_1.default(+user.id, +info.id, ["chair"], "clubs_users");
         //Send DELETE query to users table in DB
-        const results = await db_1.default.query("DELETE FROM clubs WHERE id = $1", [info.club_id]);
+        const results = await db_1.default.query("DELETE FROM clubs WHERE id = $1", [info.id]);
         const removed = results.rows[0];
         res.status(200).json({ message: "Club Removed", removed });
     }
     catch (error) {
-        res.status(500).json({
-            message: "Error. Club failed to delete.",
-            error,
-        });
+        console.log(error);
+        if (error.status < 500) {
+            res.status(error.status).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: "Internal server error", error });
+        }
     }
 });
 exports.default = clubController;

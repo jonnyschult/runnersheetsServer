@@ -154,6 +154,7 @@ userController.get("/getUser", userValidation, async (req: RequestWithUser, res:
       });
       return club;
     });
+    console.log(clubsNoRoles, clubs);
     const activities = activitiesResults.rows;
 
     //Responds with success message and the array of users

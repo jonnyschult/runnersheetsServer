@@ -30,7 +30,7 @@ const roleValidator = async (user_id, group_id, roles, table) => {
     }
     const validManagerResults = await db_1.default.query(queryString, valArray);
     if (validManagerResults.rowCount === 0) {
-        throw new models_1.CustomError(401, "User does not have privileges to access this data.");
+        throw new models_1.CustomError(401, "User does not have privileges to perform this action.");
     }
     return true;
 };
