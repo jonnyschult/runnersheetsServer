@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ClubsUsers = void 0;
 class ClubsUsers {
     constructor(role, club_id, user_id, id, created_at, updated_at) {
         this.role = role;

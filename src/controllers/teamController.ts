@@ -15,6 +15,8 @@ teamController.post("/create", userValidation, async (req: RequestWithUser, res,
     const info: Team = req.body.info;
     const user = req.user!;
 
+    console.log(info);
+
     let [queryString, valArray] = getQueryArgs("insert", "teams", info);
 
     //Throw custom error if problem with query string.
@@ -24,7 +26,6 @@ teamController.post("/create", userValidation, async (req: RequestWithUser, res,
 
     //Send INSERT to DB
     const teamResults = await pool.query(queryString, valArray);
-    //Throw error if nothing returnd from DB
     const newTeam: Team = teamResults.rows[0];
 
     //add manager who created team.
@@ -35,10 +36,11 @@ teamController.post("/create", userValidation, async (req: RequestWithUser, res,
     }
     const teamsUsersResults = await pool.query(teamsUsersQuery, teamsUsersArray);
     const newTeamRoster: TeamsUsers = teamsUsersResults.rows[0];
+    console.log(teamsUsersInfo);
 
     let updatedUser = user;
     if (!user.coach) {
-      const userResults = await pool.query("UPDATE users SET coach = true WEHRE id = $1", [user.id]);
+      const userResults = await pool.query("UPDATE users SET coach = true WHERE id = $1", [user.id]);
       updatedUser = userResults.rows[0];
     }
     delete updatedUser.passwordhash;
@@ -46,7 +48,7 @@ teamController.post("/create", userValidation, async (req: RequestWithUser, res,
 
     res.status(200).json({ message: "Team Created", newTeam, updatedUser });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Create Team Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -84,7 +86,7 @@ teamController.post("/addAthlete", userValidation, async (req: RequestWithUser, 
 
     res.status(200).json({ message: "Athlete added to team", teamMember });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Add Team Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -125,7 +127,7 @@ teamController.post("/addCoach", userValidation, async (req: RequestWithUser, re
       teamMember,
     });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Add Coach or Manager Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -164,7 +166,7 @@ teamController.get("/getTeamMembers/:id", userValidation, async (req: RequestWit
 
     res.status(200).json({ message: "Success", athletes, coaches, managers });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Get Team Members Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -190,7 +192,7 @@ teamController.get("/getTeams", userValidation, async (req: RequestWithUser, res
     const teams = teamsResults.rows;
     res.status(200).json({ message: "Success", teams });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Get Team Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -211,22 +213,17 @@ teamController.get("/getTeamActivities/:id", userValidation, async (req: Request
     //checks that updater is coach or manager on team, if not, throws error.
     await roleValidator(user.id!, team_id, ["manager", "coach"], "teams_users");
 
-    //gets all athletes
+    //gets all athletes activities
     const results = await pool.query(
-      "SELECT * FROM users INNER JOIN teams_users ON users.id = teams_users.user_id WHERE teams_users.team_id = $1 AND teams_users.role = $2;",
-      [team_id, "athlete"]
-    );
-    const athleteIds = results.rows.map((athlete: User) => athlete.id!);
-
-    const activitiesResults = await pool.query(
-      "SELECT * FROM activities WHERE user_id = ANY ($1) AND (date >= $2::DATE AND date <= $3::DATE)",
-      [athleteIds, info.start_date, info.end_date]
+      "SELECT * FROM activities INNER JOIN teams_users ON activities.user_id = teams_users.user_id WHERE teams_users.team_id = $1 AND (date >= $2 AND date <= $3);",
+      [team_id, info.start_date, info.end_date]
     );
 
-    const activities = activitiesResults.rows;
+    const activities = results.rows;
+
     res.status(200).json({ message: "Success", activities });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Get Team Activities Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -260,7 +257,7 @@ teamController.put("/updateAthlete", userValidation, async (req: RequestWithUser
 
     res.status(200).json({ message: "Account Updated!", updatedAthlete });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Get Team Activities Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -277,20 +274,30 @@ teamController.put("/updateCoach", userValidation, async (req: RequestWithUser, 
     const info: TeamsUsers = req.body.info;
     const user = req.user!;
 
+    console.log(info);
+
     //checks that updater is coach or manager on team, if not, throws error.
     await roleValidator(user.id!, info.team_id, ["manager"], "teams_users");
 
-    //Utility function to get query arguments
-    const [queryString, valArray] = getQueryArgs("update", "teams_users", info, info.team_id);
+    //Ensures that at least one manager remains on the team.
+    const manager = await pool.query("SELECT * FROM teams_users WHERE team_id = $1 AND role = $2;", [
+      info.team_id,
+      "manager",
+    ]);
+    if (manager.rowCount === 1 && manager.rows[0].user_id === user.id) {
+      throw new CustomError(403, "Must be atleast one manager on team.");
+    }
 
-    //Pass UPDATE to DB
-    const result = await pool.query(queryString, valArray);
+    const result = await pool.query(
+      `UPDATE teams_users SET role = $1 WHERE team_id = $2 AND user_id = $3 RETURNING *`,
+      [info.role, info.team_id, info.user_id]
+    );
 
-    const updatedTeamsUsesItem: TeamsUsers = result.rows[0];
+    const updatedTeamsUsersItem: TeamsUsers = result.rows[0];
 
-    res.status(200).json({ message: "Role Updated", updatedTeamsUsesItem });
+    res.status(200).json({ message: "Role Updated", updatedTeamsUsersItem });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Update Coach or Manager Role Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -319,7 +326,7 @@ teamController.put("/updateTeam", userValidation, async (req: RequestWithUser, r
 
     res.status(200).json({ message: "Name updated!", updatedTeam });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Update Team Name Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -358,7 +365,7 @@ teamController.delete("/removeCoach", userValidation, async (req: RequestWithUse
 
     res.status(200).json({ message: `Coach removed from team.`, removed });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Delete Coach or Manager Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -390,7 +397,7 @@ teamController.delete("/removeAthlete", userValidation, async (req: RequestWithU
       removed,
     });
   } catch (error) {
-    console.log(error);
+    console.log(error, "Delete Athlete Route");
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -436,10 +443,12 @@ teamController.delete("/removeTeam/:id", userValidation, async (req: RequestWith
 
     res.status(200).json({ message: `Team Removed`, removed });
   } catch (error) {
-    res.status(500).json({
-      message: "Error. Team failed to delete.",
-      error,
-    });
+    console.log(error, "Delete Team Route");
+    if (error.status < 500) {
+      res.status(error.status).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: "Internal server error", error });
+    }
   }
 });
 

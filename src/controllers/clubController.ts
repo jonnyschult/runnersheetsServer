@@ -196,7 +196,7 @@ clubController.get("/getClubActivities/:id", userValidation, async (req: Request
     //checks that updater is chair, vice_chair, or athlete for club, if not, throws error.
     await roleValidator(user.id!, club_id, ["chair", "vice_chair", "athlete"], "clubs_users");
 
-    //gets all athletes
+    //gets all athletes activities
     const results = await pool.query(
       "SELECT * FROM activities INNER JOIN clubs_users ON activities.user_id = clubs_users.user_id WHERE clubs_users.club_id = $1 AND (date >= $2 AND date <= $3);",
       [club_id, info.start_date, info.end_date]
