@@ -12,5 +12,8 @@ const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const pool = new pg_1.Pool({
     connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false,
+    },
 });
 exports.default = pool;
