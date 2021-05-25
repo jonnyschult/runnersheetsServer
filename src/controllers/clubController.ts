@@ -14,7 +14,6 @@ clubController.post("/createClub", userValidation, async (req: RequestWithUser, 
     const info = req.body.info;
     const user = req.user!;
 
-    console.log(info);
     let [queryString, valArray] = getQueryArgs("insert", "clubs", info);
     //Send INSERT to DB
     const clubResults = await pool.query(queryString, valArray);
@@ -58,6 +57,15 @@ clubController.post("/addAthlete", userValidation, async (req: RequestWithUser, 
       throw new CustomError(404, "Request failed. Athlete not found.");
     }
     const clubMember: User = clubMemberResults.rows[0];
+
+    const clubsUsersResults = await pool.query(
+      "SELECT * FROM clubs_users WHERE user_id = $1 and club_id = $2",
+      [clubMember.id, info.club_id]
+    );
+
+    if (clubsUsersResults.rowCount > 0) {
+      throw new CustomError(401, "Request failed. User already memeber of club.");
+    }
 
     //adds found user to club.
     const queryInfo: ClubsUsers = { role: "athlete", club_id: info.club_id, user_id: clubMember.id! };
@@ -103,6 +111,15 @@ clubController.post("/addChair", userValidation, async (req: RequestWithUser, re
       throw new CustomError(404, "Request failed. User not found.");
     }
     const clubMember: User = clubMemberResults.rows[0];
+
+    const clubsUsersResults = await pool.query(
+      "SELECT * FROM clubs_users WHERE user_id = $1 and club_id = $2",
+      [clubMember.id, info.club_id]
+    );
+
+    if (clubsUsersResults.rowCount > 0) {
+      throw new CustomError(401, "Request failed. User already memeber of club.");
+    }
 
     //adds found user to club.
     const queryInfo: ClubsUsers = { role: info.role, club_id: info.club_id, user_id: clubMember.id! };

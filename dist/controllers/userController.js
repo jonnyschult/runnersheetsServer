@@ -1,21 +1,9 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -59,7 +47,7 @@ userController.post("/register", async (req, res) => {
         res.status(200).json({ message: "User Created", token, user: newUser });
     }
     catch (error) {
-        console.log(error);
+        console.log("in Register Route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -106,7 +94,7 @@ userController.post("/login", async (req, res) => {
         });
     }
     catch (error) {
-        console.log(error);
+        console.log("in Login Route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -126,7 +114,7 @@ userController.get("/getUser", middleware_1.userValidation, async (req, res) => 
         delete user.passwordhash;
         const startDate = new Date().getTime() - 604800000;
         const endDate = new Date().getTime();
-        const teamsResults = await db_1.default.query("SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;", [user.id]);
+        const teamsResults = await db_1.default.query("SELECT DISTINCT team_name, id FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;", [user.id]);
         const clubsResults = await db_1.default.query("SELECT * FROM clubs INNER JOIN clubs_users ON clubs.id = clubs_users.club_id WHERE clubs_users.user_id = $1;", [user.id]);
         const activitiesResults = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);", [user.id, startDate, endDate]);
         const teamsUsersResults = await db_1.default.query("SELECT * FROM teams_users WHERE user_id = $1;", [user.id]);
@@ -144,6 +132,7 @@ userController.get("/getUser", middleware_1.userValidation, async (req, res) => 
             });
             return team;
         });
+        console.log(teamsResults.rows);
         const clubs = clubsNoRoles.map((club) => {
             clubsUsers.forEach((clubUser) => {
                 if (clubUser.club_id === club.id) {
@@ -153,13 +142,12 @@ userController.get("/getUser", middleware_1.userValidation, async (req, res) => 
             });
             return club;
         });
-        console.log(clubsNoRoles, clubs);
         const activities = activitiesResults.rows;
         //Responds with success message and the array of users
         res.status(200).json({ message: "Success", user, clubs, teams, activities });
     }
     catch (error) {
-        console.log("In userController getUser", error);
+        console.log("In the get user route", error);
         res.status(500).json({ message: "Internal server error", error });
     }
 });
@@ -178,7 +166,7 @@ userController.put("/updateUser", middleware_1.userValidation, async (req, res) 
         res.status(200).json({ message: "Account Updated!", updatedUser });
     }
     catch (error) {
-        console.log(error);
+        console.log("in Update User Info Route", error);
         res.status(500).json({ message: "Internal server error", error });
     }
 });
@@ -213,7 +201,7 @@ async (req, res) => {
         res.status(200).json({ message: "Password Updated" });
     }
     catch (error) {
-        console.log(error);
+        console.log("in Update User Info Route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -241,7 +229,7 @@ async (req, res) => {
         res.status(200).json({ message: "User Deleted" });
     }
     catch (error) {
-        console.log(error);
+        console.log("in Delete User Route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }

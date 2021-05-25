@@ -15,8 +15,6 @@ teamController.post("/create", userValidation, async (req: RequestWithUser, res,
     const info: Team = req.body.info;
     const user = req.user!;
 
-    console.log(info);
-
     let [queryString, valArray] = getQueryArgs("insert", "teams", info);
 
     //Throw custom error if problem with query string.
@@ -36,12 +34,14 @@ teamController.post("/create", userValidation, async (req: RequestWithUser, res,
     }
     const teamsUsersResults = await pool.query(teamsUsersQuery, teamsUsersArray);
     const newTeamRoster: TeamsUsers = teamsUsersResults.rows[0];
-    console.log(teamsUsersInfo);
 
     let updatedUser = user;
     if (!user.coach) {
-      const userResults = await pool.query("UPDATE users SET coach = true WHERE id = $1", [user.id]);
+      const userResults = await pool.query("UPDATE users SET coach = true WHERE id = $1 RETURNING *", [
+        user.id,
+      ]);
       updatedUser = userResults.rows[0];
+      console.log(userResults);
     }
     delete updatedUser.passwordhash;
     newTeam.role = newTeamRoster.role;
@@ -74,6 +74,15 @@ teamController.post("/addAthlete", userValidation, async (req: RequestWithUser, 
       throw new CustomError(404, "Request failed. Athlete not found.");
     }
     const teamMember: User = teamMemberResults.rows[0];
+
+    const teamsUsersResults = await pool.query(
+      "SELECT * FROM teams_users WHERE user_id = $1 and team_id = $2",
+      [teamMember.id, info.team_id]
+    );
+
+    if (teamsUsersResults.rowCount > 0) {
+      throw new CustomError(401, "Request failed. User already memeber of team.");
+    }
 
     //adds found user to team.
     const queryInfo: TeamsUsers = { role: "athlete", team_id: info.team_id, user_id: teamMember.id! };
@@ -112,6 +121,15 @@ teamController.post("/addCoach", userValidation, async (req: RequestWithUser, re
       throw new CustomError(404, "Request failed. User not found.");
     }
     const teamMember: User = teamMemberResults.rows[0];
+
+    const teamsUsersResults = await pool.query(
+      "SELECT * FROM teams_users WHERE user_id = $1 and team_id = $2",
+      [teamMember.id, info.team_id]
+    );
+
+    if (teamsUsersResults.rowCount > 0) {
+      throw new CustomError(401, "Request failed. User already memeber of team.");
+    }
 
     //adds found user to team.
     const queryInfo: TeamsUsers = { role: info.role, team_id: info.team_id, user_id: teamMember.id! };
@@ -273,8 +291,6 @@ teamController.put("/updateCoach", userValidation, async (req: RequestWithUser, 
   try {
     const info: TeamsUsers = req.body.info;
     const user = req.user!;
-
-    console.log(info);
 
     //checks that updater is coach or manager on team, if not, throws error.
     await roleValidator(user.id!, info.team_id, ["manager"], "teams_users");

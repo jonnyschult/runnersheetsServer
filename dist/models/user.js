@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = void 0;
 class User {
     constructor(email, first_name, last_name, date_of_birth, premium_user, coach, fitbit_refresh, strava_refresh, garmin_refresh, height_inches, weight_pounds, created_at, updated_at, id, password, passwordhash) {
         this.email = email;

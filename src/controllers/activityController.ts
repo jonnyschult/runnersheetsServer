@@ -32,7 +32,7 @@ activityController.post("/createActivity", userValidation, async (req: RequestWi
       message: "Activity saved.",
     });
   } catch (error) {
-    console.log(error);
+    console.log("In Create Activity route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -64,7 +64,7 @@ activityController.get("/getActivities", userValidation, async (req: RequestWith
       message: "Success. Student assigned lesson.",
     });
   } catch (error) {
-    console.log(error);
+    console.log("In Get Activities route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -82,8 +82,6 @@ activityController.get("/getActivitiesByDate", userValidation, async (req: Reque
     const startDate = req.query.start_date;
     const endDate = req.query.end_date;
 
-    console.log(startDate, endDate);
-
     //Get data
     const results = await pool.query(
       "SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);",
@@ -94,7 +92,7 @@ activityController.get("/getActivitiesByDate", userValidation, async (req: Reque
 
     res.status(200).json({ message: "Activities retrieved", activities });
   } catch (error) {
-    console.log(error);
+    console.log("In Get Activities by Date route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -132,7 +130,7 @@ activityController.put("/updateActivity", userValidation, async (req: RequestWit
 
     res.status(200).json({ message: "Activity updated.", updatedActivity });
   } catch (error) {
-    console.log(error);
+    console.log("In Update Activity route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -171,7 +169,7 @@ activityController.delete("/removeActivity", userValidation, async (req: Request
 
     res.status(200).json({ message: "Activity Deleted" });
   } catch (error) {
-    console.log(error);
+    console.log("In Delete Activity route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {

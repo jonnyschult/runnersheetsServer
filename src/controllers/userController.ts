@@ -40,7 +40,7 @@ userController.post("/register", async (req, res) => {
     delete newUser.passwordhash;
     res.status(200).json({ message: "User Created", token, user: newUser });
   } catch (error) {
-    console.log(error);
+    console.log("in Register Route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else if (error.constraint === "users_email_key") {
@@ -93,7 +93,7 @@ userController.post("/login", async (req, res) => {
       token,
     });
   } catch (error) {
-    console.log(error);
+    console.log("in Login Route", error);
     if (error.status < 500) {
       res.status(error.status).json({ message: error.message });
     } else {
@@ -117,7 +117,7 @@ userController.get("/getUser", userValidation, async (req: RequestWithUser, res:
     const endDate = new Date().getTime();
 
     const teamsResults = await pool.query(
-      "SELECT * FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;",
+      "SELECT DISTINCT team_name, id FROM teams INNER JOIN teams_users ON teams.id = teams_users.team_id WHERE teams_users.user_id = $1;",
       [user.id]
     );
     const clubsResults = await pool.query(
@@ -145,6 +145,7 @@ userController.get("/getUser", userValidation, async (req: RequestWithUser, res:
       });
       return team;
     });
+    console.log(teamsResults.rows);
     const clubs = clubsNoRoles.map((club) => {
       clubsUsers.forEach((clubUser) => {
         if (clubUser.club_id === club.id) {
@@ -154,13 +155,12 @@ userController.get("/getUser", userValidation, async (req: RequestWithUser, res:
       });
       return club;
     });
-    console.log(clubsNoRoles, clubs);
     const activities = activitiesResults.rows;
 
     //Responds with success message and the array of users
     res.status(200).json({ message: "Success", user, clubs, teams, activities });
   } catch (error) {
-    console.log("In userController getUser", error);
+    console.log("In the get user route", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });
@@ -183,7 +183,7 @@ userController.put("/updateUser", userValidation, async (req: RequestWithUser, r
 
     res.status(200).json({ message: "Account Updated!", updatedUser });
   } catch (error) {
-    console.log(error);
+    console.log("in Update User Info Route", error);
     res.status(500).json({ message: "Internal server error", error });
   }
 });
@@ -228,7 +228,7 @@ userController.put(
 
       res.status(200).json({ message: "Password Updated" });
     } catch (error) {
-      console.log(error);
+      console.log("in Update User Info Route", error);
       if (error.status < 500) {
         res.status(error.status).json({ message: error.message });
       } else {
@@ -261,7 +261,7 @@ userController.delete(
 
       res.status(200).json({ message: "User Deleted" });
     } catch (error) {
-      console.log(error);
+      console.log("in Delete User Route", error);
       if (error.status < 500) {
         res.status(error.status).json({ message: error.message });
       } else {

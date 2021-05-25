@@ -17,7 +17,6 @@ teamController.post("/create", middleware_1.userValidation, async (req, res, nex
     try {
         const info = req.body.info;
         const user = req.user;
-        console.log(info);
         let [queryString, valArray] = getQueryArgsFn_1.default("insert", "teams", info);
         //Throw custom error if problem with query string.
         if (!queryString) {
@@ -34,11 +33,13 @@ teamController.post("/create", middleware_1.userValidation, async (req, res, nex
         }
         const teamsUsersResults = await db_1.default.query(teamsUsersQuery, teamsUsersArray);
         const newTeamRoster = teamsUsersResults.rows[0];
-        console.log(teamsUsersInfo);
         let updatedUser = user;
         if (!user.coach) {
-            const userResults = await db_1.default.query("UPDATE users SET coach = true WHERE id = $1", [user.id]);
+            const userResults = await db_1.default.query("UPDATE users SET coach = true WHERE id = $1 RETURNING *", [
+                user.id,
+            ]);
             updatedUser = userResults.rows[0];
+            console.log(userResults);
         }
         delete updatedUser.passwordhash;
         newTeam.role = newTeamRoster.role;
@@ -69,6 +70,10 @@ teamController.post("/addAthlete", middleware_1.userValidation, async (req, res)
             throw new models_1.CustomError(404, "Request failed. Athlete not found.");
         }
         const teamMember = teamMemberResults.rows[0];
+        const teamsUsersResults = await db_1.default.query("SELECT * FROM teams_users WHERE user_id = $1 and team_id = $2", [teamMember.id, info.team_id]);
+        if (teamsUsersResults.rowCount > 0) {
+            throw new models_1.CustomError(401, "Request failed. User already memeber of team.");
+        }
         //adds found user to team.
         const queryInfo = { role: "athlete", team_id: info.team_id, user_id: teamMember.id };
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "teams_users", queryInfo);
@@ -104,6 +109,10 @@ teamController.post("/addCoach", middleware_1.userValidation, async (req, res) =
             throw new models_1.CustomError(404, "Request failed. User not found.");
         }
         const teamMember = teamMemberResults.rows[0];
+        const teamsUsersResults = await db_1.default.query("SELECT * FROM teams_users WHERE user_id = $1 and team_id = $2", [teamMember.id, info.team_id]);
+        if (teamsUsersResults.rowCount > 0) {
+            throw new models_1.CustomError(401, "Request failed. User already memeber of team.");
+        }
         //adds found user to team.
         const queryInfo = { role: info.role, team_id: info.team_id, user_id: teamMember.id };
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "teams_users", queryInfo);
@@ -238,7 +247,6 @@ teamController.put("/updateCoach", middleware_1.userValidation, async (req, res)
     try {
         const info = req.body.info;
         const user = req.user;
-        console.log(info);
         //checks that updater is coach or manager on team, if not, throws error.
         await roleValidator_1.default(user.id, info.team_id, ["manager"], "teams_users");
         //Ensures that at least one manager remains on the team.

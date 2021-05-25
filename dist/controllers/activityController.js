@@ -1,21 +1,9 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -50,7 +38,7 @@ activityController.post("/createActivity", middleware_1.userValidation, async (r
         });
     }
     catch (error) {
-        console.log(error);
+        console.log("In Create Activity route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -80,7 +68,7 @@ activityController.get("/getActivities", middleware_1.userValidation, async (req
         });
     }
     catch (error) {
-        console.log(error);
+        console.log("In Get Activities route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -97,14 +85,13 @@ activityController.get("/getActivitiesByDate", middleware_1.userValidation, asyn
         const user = req.user;
         const startDate = req.query.start_date;
         const endDate = req.query.end_date;
-        console.log(startDate, endDate);
         //Get data
         const results = await db_1.default.query("SELECT * FROM activities WHERE user_id = $1 AND (date >= $2 AND date <= $3);", [user.id, startDate, endDate]);
         const activities = results.rows;
         res.status(200).json({ message: "Activities retrieved", activities });
     }
     catch (error) {
-        console.log(error);
+        console.log("In Get Activities by Date route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -137,7 +124,7 @@ activityController.put("/updateActivity", middleware_1.userValidation, async (re
         res.status(200).json({ message: "Activity updated.", updatedActivity });
     }
     catch (error) {
-        console.log(error);
+        console.log("In Update Activity route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }
@@ -171,7 +158,7 @@ activityController.delete("/removeActivity", middleware_1.userValidation, async 
         res.status(200).json({ message: "Activity Deleted" });
     }
     catch (error) {
-        console.log(error);
+        console.log("In Delete Activity route", error);
         if (error.status < 500) {
             res.status(error.status).json({ message: error.message });
         }

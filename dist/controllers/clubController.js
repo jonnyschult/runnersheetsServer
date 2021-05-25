@@ -17,7 +17,6 @@ clubController.post("/createClub", middleware_1.userValidation, async (req, res)
     try {
         const info = req.body.info;
         const user = req.user;
-        console.log(info);
         let [queryString, valArray] = getQueryArgsFn_1.default("insert", "clubs", info);
         //Send INSERT to DB
         const clubResults = await db_1.default.query(queryString, valArray);
@@ -58,6 +57,10 @@ clubController.post("/addAthlete", middleware_1.userValidation, async (req, res)
             throw new models_1.CustomError(404, "Request failed. Athlete not found.");
         }
         const clubMember = clubMemberResults.rows[0];
+        const clubsUsersResults = await db_1.default.query("SELECT * FROM clubs_users WHERE user_id = $1 and club_id = $2", [clubMember.id, info.club_id]);
+        if (clubsUsersResults.rowCount > 0) {
+            throw new models_1.CustomError(401, "Request failed. User already memeber of club.");
+        }
         //adds found user to club.
         const queryInfo = { role: "athlete", club_id: info.club_id, user_id: clubMember.id };
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "clubs_users", queryInfo);
@@ -102,6 +105,10 @@ clubController.post("/addChair", middleware_1.userValidation, async (req, res) =
             throw new models_1.CustomError(404, "Request failed. User not found.");
         }
         const clubMember = clubMemberResults.rows[0];
+        const clubsUsersResults = await db_1.default.query("SELECT * FROM clubs_users WHERE user_id = $1 and club_id = $2", [clubMember.id, info.club_id]);
+        if (clubsUsersResults.rowCount > 0) {
+            throw new models_1.CustomError(401, "Request failed. User already memeber of club.");
+        }
         //adds found user to club.
         const queryInfo = { role: info.role, club_id: info.club_id, user_id: clubMember.id };
         const [queryString, valArray] = getQueryArgsFn_1.default("insert", "clubs_users", queryInfo);
