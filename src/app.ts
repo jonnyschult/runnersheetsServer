@@ -2,24 +2,19 @@ import * as dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import { headers } from "./middleware/index";
-import {
-  userController,
-  activityController,
-  teamController,
-  fitbitController,
-  clubController,
-} from "./controllers/index";
+import { userRouter, activityRouter, teamRouter, fitbitRouter, clubRouter, stravaRouter } from "./routes";
 
 const app = express();
 
 app.use(express.json());
 app.use(headers);
 
-app.use("/users", userController);
-app.use("/fitbit", fitbitController);
-app.use("/activities", activityController);
-app.use("/teams", teamController);
-app.use("/clubs", clubController);
+app.use("/users", userRouter);
+app.use("/fitbit", fitbitRouter);
+app.use("/strava", stravaRouter);
+app.use("/activities", activityRouter);
+app.use("/teams", teamRouter);
+app.use("/clubs", clubRouter);
 
 app.listen(process.env.PORT, () => {
   console.log(`Listening on ${process.env.PORT}`);

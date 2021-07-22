@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import { User, RequestWithUser, CustomError, ClubsUsers, TeamsUsers, Club, Team } from "../models/";
+import { User, RequestWithUser, CustomError, ClubsUsers, TeamsUsers, Club, Team } from "../models";
 import { Response, Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";

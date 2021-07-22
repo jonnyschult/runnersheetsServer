@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Activity = void 0;
 class Activity {
     constructor(email, date, distance_meters, duration_seconds, user_id, elevation_meters, avg_hr, max_hr, description, strava_id, garmin_id, fitbit_id, created_at, updated_at, id) {
         this.email = email;
