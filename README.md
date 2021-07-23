@@ -1,120 +1,72 @@
-# runnersheetsServer
+# RunnerSheets - Backend
 
-<!-- prettier-ignore -->
-### Overview:
+## App Description
 
-The server allows users to create an account, add activities, create teams, and assign roles for team members. Activities, teams, and users are CRUD compliant. As RunnerSheets is targeted to run coaching, the logic of the data manipulation and structure enabled by the server is focused around three user roles: athelete, coach, and manager. One can be a user without being on a team and thus not have one of these roles. In that case, users can only interact and have their data interacted with by themselves, or create a team. If a user creates a team, they are automatically assigned the role of manager, as each team needs a manager to control team roles and settings. Once the team has been created, the manager can add athletes, coaches and other managers. They can update the team name, members, and remove the team. Also, they have all the privileges that the coach role has. Coaches can add or remove athletes and get individual athlete or all athletes' activities if they belong to the same team as the coach. Athletes have no access to others information and simply belong to a team. Teams and athlete/coaches/managers are connected to each other through a junction table titled TeamRosters. Users and activities are connected through a user hasMany association. These associations enable coaches/manager to get all athlete activities.
+RunnerSheets is an ongoing project meant to be a data hub, integrating activities stored on various platforms. As of now, it is integrated with Strava and Fitbit. The app also allows one to share data with other users via the club option, and it allows coaches to collate the data from their team members without sharing that data between peers.
 
-### Validations:
+### Features
 
-- There are five validation files.
-  1. userValidation:
-     Function: Takes in a token, decodes it and finds the associated user via jwt and sequelize methods. If found, it calls the next method to pass the decoded information into the next server process.
-     Use: Sufficient for access to the activityContorller route and delete/update user functions in userController. Necessary for managerController and coachController routes.
-  2. coachValidation:
-     Function: Takes user info decoded from userValidation and searches TeamRosters for a match between req.user.id and userId. If found, it checks the role. If role is manager OR coach, it calls the next method and allows the server to execute it's next process.
-     Use: Sufficient to grant access to the coachController route.
-  3. managerValidation:
-     Function: Takes user info decoded from userValidation and searches TeamRosters for a match between req.user.id and userId. If found, it checks the role. If role is manager, it calls the next method and allows the server to execute it's next process.
-     Use: Sufficient to grant access to the managerController route.
-  4. viceChairValidation:
-     Function: Takes user info decoded from userValidation and searches ClubRosters for a match between req.user.id and userId. If found, it checks the role. If role is viceChair OR chairperson, it calls the next method and allows the server to execute it's next process.
-     Use: Sufficient to grant access to the viceChairController route.
-  5. chairpersonValidation:
-     Function: Takes user info decoded from userValidation and searches ClubRosters for a match between req.user.id and userId. If found, it checks the role. If role is chairperson, it calls the next method and allows the server to execute it's next process.
-     Use: Sufficient to grant access to the chairpersonController route.
+- Oauth integration with Strava and Fitbit
+- Full User CRUD
+- Team data sharing with a coach or coaches
+- Club peer to peer data sharing
+- Chartjs data visualization
+- Manual activity adder
 
-### Controllers:
+This project is hosted on Heroku
 
-- There are ten route controllers. \* = userValidation required, ** = coachValidation required, \*** = managerValidation required. \***\*= viceChairValidation required \*\*\***=chairpersonValidation required
-  - 1. userController:
-    - Use: Enables user registration, login, user information updating* and user deletion*.
-    - Routes: ~/user
-      - POST /register&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Registers new user account
-      - POST /login&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Logs in a user
-      - GET /getAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Gets athlete information
-      - PUT/updatePassword&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Updates password \*
-      - PUT/updateUser&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update User Info \*
-      - DELETE/removeUser&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete user \*
-  2. activityController\*:
-     - Use: Enables users to create, get, update and delete activities (runs).
-     - Routes: ~/activity
-       - POST/create&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Create user activity
-       - GET /getActivities/id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Get all activities for specific user
-       - PUT/update&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update Activity
-       - DELETE/removeActivity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete activity
-  3. teamController\*:
-     - Use: Enables users to create a team and auto assigns that user to a manager role for the team.
-     - Routes: ~/team
-       - POST /create&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Create team
-  4. coachController\*\*:
-     - Use: Enables users with the coach role to add athletes to their team, view all athletes, view single athlete or all team athletes' activities, and delete athlete.
-     - Routes: ~/coach
-       - POST /addAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Add athlete to team (via TeamRoster through table)
-       - GET /getAtheletes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Get all athletes on a specific team
-       - GET /getCoaches/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Get all coaches and their roles for a specific team
-       - GET /coachTeams&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Get all teams associated with a coach or manager
-       - GET /getTeamActivities/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Get all activities for all athletes on a team (+accept query string for date)
-       - GET /getAthleteActivities/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Get all activities for a specific athlete
-       - PUT /updateAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update athlete info (weight, height, age)
-       - DELETE/removeAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete athlete from team
-  5. managerController\*\*\*:
-     - Use: Enables users with the manager role to add coaches and managers to their team, update coach/manager roles, delete coaches and managers, and remove team.
-     - Routes: ~/manager
-       - Managers: ~/manager \*\*\*
-       - POST /addCoach&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Add coach or manager to team
-       - PUT /updateTeam&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update team name
-       - PUT /updateCoach&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update role of coach or manager (require atleast one manager to be on team)
-       - DELETE /removeCoach&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete coach or manager from team
-       - DELETE /removeTeam&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete team
-  6. viceChairController\*\*\*\*:
-     - Use: Enables users with the viceChairperson role to add athletes to their club, view all athletes, view single athlete or all club athletes' activities, and delete athlete.
-       - POST /addAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Add athlete to club (via ClubRoster through table)
-       - DELETE/removeAthlete&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete athlete from club
-  7. chairpersonController**\***
-     - Use: Enables users with the chairperson role to add viceChairpersons and other chairpersons to their club, update chairperson/viceChairpersons roles, delete viceChairpersons and chairpersons, and remove club.
-     - Routes: ~/manager
-       - Chairpersons: ~/chairpersons \*\*\*
-       - POST /addChairperson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Add chairperson or manager to team
-       - PUT /updateClub&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update team name
-       - PUT /updateChairperson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Update role of coach or manager (require atleast one manager to be on team)
-       - DELETE /removeChairperson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete coach or manager from team
-       - DELETE /removeClub&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Delete team
-  8. clubController\*\*
-     - Use: Enables users to create and control a club.
-     - Routes: ~/club
-       - POST /create&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Create club
-       - GET /getAthletes/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; => Gets all athletes associated with a club
-       - GET /getChairpersons/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Get all club chairpersons and vice chairpersons
-       - Get /getClubs&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Gets all clubs associated with a user
-       - GET /getClubActivities/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Get activities for the club
-       - GET /getAthleteActivities/:id&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Single athlete activities
-       - DELETE /removeSelf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=> Remove self from club
+[Demo for RunnerSheets](https://runnersheetsclient.herokuapp.com)
 
-### Models:
+## Frontend
 
-- There are four models for four tables. All by default have id (except teamRosters), createdAt and updatedAt columns. \* = allowNull: true
-  1. user:
-     - Use: Provides a model for the user table which stores user information
-     - Columns: email, firstName, lastName, passwordHash, heightInInches*, weightInPounds*, age\*, isPremium, isCoach
-     - Association: user has many activities and user belongs to many teams
-  2. acitivity:
-     - Use: Provides a model for the activity tables which stores user activity details
-     - Columns: date, meters, durationSecs, elevationMeters*, avgHR*, maxHR*, description*, strava_id\*, userId
-     - Association: activity belongs to user.
-  3. team:
-     - Use: Provides a model for the team table which stores minimal information about a team.
-     - Columns: teamName
-     - Association: team belongs to many users
-  4. teamRosters:
-     - Use: Provides a junction table for the many-to-many relation between teams and users
-     - Columns: role, teamId, userId
-     - Association: Is the junction table for the many to many relation between users and teams.
-  5. club:
-  - Use: Provides a model for the club table which stores minimal information about a club.
-  - Columns: clubName
-  - Association: club belongs to many users
-  6. clubRosters:
-     - Use: Provides a junction table for the many-to-many relation between clubs and users
-     - Columns: role, clubId, userId
-     - Association: Is the junction table for the many to many relation between users and clubs.
+Go to [GitHub-RunnerSheetsClient](https://github.com/jonnyschult/runnersheetsClient) and follow the instructions in the README
+
+## Backend
+
+The backend is a node + Express server connected to a Postgres database written in TypeScript and SQL.
+
+**_Running this app locally will not allow you to use the Strava and Fitbit funcationality to add activities to your profile. But there is a demo button to auto generate sample data. More on that below. To see how Strava and Fitbit integrate, please use the deployed link above._**
+
+### Requirements
+
+- Node
+- Nodemon (could avoid if you change the dev script)
+- psql/Postgres
+- npm or yarn
+
+## Server and Database Setup
+
+1. Connect to psql as the postgres superuser. On Ubuntu, the command is: `sudo -u postgres psql postgres`.
+2. Copy and paste the contents of the database.pgsql file in this repository. It will create the Database, connect you to that database, and the create all the tables, types, etc.
+3. Create .env. Make sure you add your password to the DATABASE_URL file with the following variables:
+
+   - PORT = 8800
+   - JWT_SECRET = asupersecret
+   - FITBIT_SECRET = whatever
+   - FITBIT_ID = whatever
+   - FITBIT_CALLBACK = http://localhost:3000/fitbit
+   - FITBIT_BASE64 = whatever
+   - DATABASE_URL = postgres://postgres:**PASSWORD**@localhost:5432/runnersheets
+   - STRAVA_ID = Whatever
+   - STRAVA_SECRET = Whatever
+   - STRAVA_CALLBACK = http://localhost:3000/strava
+   - DEMO_PASS = testpass
+
+Install dependencies: `npm install` or `yarn install`
+
+### Start server
+
+- `npm run dev` or `yarn dev`
+
+## Using RunnerSheets
+
+1. Follow the instruction on the frontend's README to start the browser client.
+2. Once it is running, press the "+Yourself or Sign In" button and register a user. With the user registered, the app should automatically redirect you to the athlete's landing page.
+3. Click on the "Create Demo Data" button in the "Add Activities" container at the bottom right of the browser screen. This button is only available when the app is running on localhost.
+4. Type in "testpass" for the password and press the "Generate Activites" button. **If you put a different value for the DEMO_PASS .env variable, you'll have to use that instead**.
+
+This should generate about a years worth of runs assuming moderate running ability. It will also create 3 clubs, two of which you are a members, one of which you are the chair person. You have different permissions depending on which role you have. To populate those clubs, the demo button also adds about a years worth of runs for each user in those clubs. You can see this by clicking through the clubs page. I didn't bother populating the coaches page because it is very similar to the clubs page, except only the coach can see the activities.
+From here, you do whatever you want. You can update user info, change password, delete user, etc. You can also log in as the other generated users. You can find their emails on the club page. All of their passwords are "testpass".
+Couple final notes. As mentioned above, the Strava and Fitbit integration won't work, because you'd need my seceret keys, and I'm not sharing. Second, the UX/UI is a bit clunky, but adequate for testing out the functionality. If/when I redesign this app, it will be smoother.
+
+Contact me: jonathon.schult@gmail.com
